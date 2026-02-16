@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechVault - Premium Tech Store</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <div class="header-inner">
+            <h1>TechVault</h1>
+            <div class="header-right">
+                <span id="ver-badge">v1 Stable</span>
+                <button id="cart-btn" onclick="tog()">Cart (<span id="count">0</span>)</button>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div id="products" class="grid"></div>
+    </main>
+    <aside id="sidebar" class="sidebar">
+        <div class="side-head">
+            <h2>Shopping Cart</h2>
+            <button onclick="tog()">Close</button>
+        </div>
+        <div id="cart-items"></div>
+        <div id="total" class="total"></div>
+    </aside>
+    <div id="overlay" class="overlay" onclick="tog()"></div>
+    <footer>
+        <p>TechVault | Powered by SmartOps AI | Session: <span id="sid"></span></p>
+    </footer>
+    <script src="app.js"></script>
+</body>
+
+</html>
