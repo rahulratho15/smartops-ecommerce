@@ -1,5 +1,5 @@
 ﻿/* TechVault E-Commerce - SmartOps Monitored */
-var API = 'https://uj1yi1930c.execute-api.us-east-1.amazonaws.com/prod';
+var API = 'https://kn6pfzv6b4.execute-api.us-east-1.amazonaws.com/prod';
 var VER = 'v1';
 var SID = 's-' + Math.random().toString(36).substr(2, 8);
 var PRODUCTS = [

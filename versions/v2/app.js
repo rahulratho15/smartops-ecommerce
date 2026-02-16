@@ -1,6 +1,6 @@
 ﻿/* TechVault E-Commerce - SmartOps Monitored */
 /* VERSION 2: UNSTABLE - Add-to-cart animation causes crash */
-var API = 'https://uj1yi1930c.execute-api.us-east-1.amazonaws.com/prod';
+var API = 'https://kn6pfzv6b4.execute-api.us-east-1.amazonaws.com/prod';
 var VER = 'v2';
 var SID = 's-' + Math.random().toString(36).substr(2, 8);
 var PRODUCTS = [
