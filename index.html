@@ -10,12 +10,33 @@
 </head>
 
 <body>
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="auth-overlay">
+        <div class="auth-box">
+            <h2 id="auth-title">Sign In</h2>
+            <p id="auth-sub" class="auth-sub">Welcome to TechVault</p>
+            <div id="auth-error" class="auth-error" style="display:none"></div>
+            <div id="signup-field" style="display:none">
+                <input id="auth-name" type="text" placeholder="Full Name" class="auth-input">
+            </div>
+            <input id="auth-email" type="email" placeholder="Email address" class="auth-input">
+            <input id="auth-pass" type="password" placeholder="Password" class="auth-input">
+            <button id="auth-btn" class="auth-submit" onclick="doAuth()">Sign In</button>
+            <p class="auth-switch">
+                <span id="auth-toggle-text">Don't have an account?</span>
+                <a href="#" id="auth-toggle" onclick="toggleAuth(event)">Sign Up</a>
+            </p>
+        </div>
+    </div>
+
     <header>
         <div class="header-inner">
             <h1>TechVault</h1>
             <div class="header-right">
-                <span id="ver-badge">v1 Stable</span>
+                <span id="user-badge" style="display:none"></span>
+                <span id="ver-badge">v2</span>
                 <button id="cart-btn" onclick="tog()">Cart (<span id="count">0</span>)</button>
+                <button id="logout-btn" onclick="logout()" style="display:none">Logout</button>
             </div>
         </div>
     </header>
@@ -32,7 +53,7 @@
     </aside>
     <div id="overlay" class="overlay" onclick="tog()"></div>
     <footer>
-        <p>TechVault | Powered by SmartOps AI | Session: <span id="sid"></span></p>
+        <p>TechVault | Powered by SmartOps AI | <span id="user-email"></span></p>
     </footer>
     <script src="app.js"></script>
 </body>

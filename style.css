@@ -1,40 +1,41 @@
-/* TechVault - SmartOps E-Commerce */
-* {
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box
 }
 
 body {
-    font-family: 'Inter', sans-serif;
-    background: #0f0f0f;
-    color: #d4d4d4;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #0a0a0a;
+    color: #e5e5e5;
     min-height: 100vh
 }
 
 header {
-    background: #161616;
-    border-bottom: 1px solid #252525;
+    background: #111;
+    border-bottom: 1px solid #1a1a1a;
+    padding: 14px 24px;
     position: sticky;
     top: 0;
-    z-index: 10
+    z-index: 50
 }
 
 .header-inner {
-    max-width: 1100px;
-    margin: 0 auto;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    height: 56px;
-    padding: 0 20px
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto
 }
 
-header h1 {
-    font-size: 18px;
+h1 {
+    font-size: 20px;
     font-weight: 700;
-    color: #fff;
-    letter-spacing: -0.5px
+    background: linear-gradient(135deg, #667eea, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent
 }
 
 .header-right {
@@ -44,62 +45,103 @@ header h1 {
 }
 
 #ver-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
     font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 10px;
-    background: #162716;
-    color: #4ade80;
-    border: 1px solid #1f3d1f;
-    font-weight: 500
+    font-weight: 600;
+    background: #1a1a2e;
+    color: #a78bfa;
+    border: 1px solid #2d2a4a
 }
 
-#cart-btn {
-    background: #2563eb;
-    color: #fff;
-    border: none;
-    padding: 7px 14px;
-    border-radius: 5px;
+#user-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #0f3a1f;
+    color: #4ade80;
+    border: 1px solid #166534
+}
+
+#cart-btn,
+#logout-btn {
+    padding: 6px 14px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: #1a1a1a;
+    color: #e5e5e5;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
     font-family: inherit;
-    transition: background .15s
+    transition: border-color .15s
 }
 
 #cart-btn:hover {
-    background: #1d4ed8
+    border-color: #667eea
+}
+
+#logout-btn {
+    border-color: #7f1d1d;
+    color: #fca5a5
+}
+
+#logout-btn:hover {
+    border-color: #ef4444
 }
 
 main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 28px 20px
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px
 }
 
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px
+    gap: 18px
 }
 
 .card {
-    background: #161616;
-    border: 1px solid #252525;
-    border-radius: 8px;
+    background: #141414;
+    border: 1px solid #1f1f1f;
+    border-radius: 10px;
     overflow: hidden;
-    transition: transform .15s, border-color .15s
+    transition: transform .15s, border-color .15s;
+    position: relative
 }
 
 .card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     border-color: #333
+}
+
+.card.new-card {
+    border-color: #7c3aed
+}
+
+.card.new-card:hover {
+    border-color: #a78bfa
+}
+
+.new-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #7c3aed;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px
 }
 
 .card img {
     width: 100%;
-    height: 170px;
-    object-fit: cover;
-    display: block
+    height: 180px;
+    object-fit: cover
 }
 
 .info {
@@ -109,37 +151,35 @@ main {
 .cat {
     font-size: 10px;
     text-transform: uppercase;
-    color: #737373;
-    letter-spacing: 0.8px;
-    font-weight: 500
+    letter-spacing: 1.5px;
+    color: #667eea;
+    font-weight: 600
 }
 
-.info h3 {
+h3 {
     font-size: 14px;
-    font-weight: 600;
-    margin: 4px 0;
-    color: #f0f0f0
+    margin: 6px 0;
+    font-weight: 600
 }
 
 .price {
-    font-size: 16px;
+    color: #4ade80;
     font-weight: 700;
-    color: #3b82f6;
-    margin-bottom: 10px
+    margin: 6px 0 12px
 }
 
 .btn {
     width: 100%;
-    padding: 9px;
+    padding: 8px;
     background: #2563eb;
     color: #fff;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
     font-family: inherit;
-    transition: background .15s, opacity .15s
+    transition: background .15s
 }
 
 .btn:hover:not(:disabled) {
@@ -159,34 +199,33 @@ main {
     background: #dc2626
 }
 
+.btn.new-product {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    border: 1px solid #7c3aed
+}
+
+.btn.new-product:hover:not(:disabled) {
+    background: linear-gradient(135deg, #6d28d9, #5b21b6)
+}
+
+/* Cart sidebar */
 .sidebar {
     position: fixed;
     top: 0;
-    right: -380px;
-    width: 380px;
+    right: -340px;
+    width: 340px;
     height: 100vh;
-    background: #161616;
-    border-left: 1px solid #252525;
-    z-index: 20;
+    background: #141414;
+    border-left: 1px solid #1a1a1a;
+    z-index: 60;
     transition: right .25s;
-    padding: 20px;
-    overflow-y: auto
+    display: flex;
+    flex-direction: column;
+    padding: 20px
 }
 
 .sidebar.open {
     right: 0
-}
-
-.overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, .5);
-    z-index: 15
-}
-
-.overlay.open {
-    display: block
 }
 
 .side-head {
@@ -197,16 +236,15 @@ main {
 }
 
 .side-head h2 {
-    font-size: 16px;
-    color: #fff
+    font-size: 16px
 }
 
 .side-head button {
     background: none;
     border: 1px solid #333;
     color: #999;
-    padding: 5px 10px;
     border-radius: 4px;
+    padding: 4px 10px;
     cursor: pointer;
     font-family: inherit;
     font-size: 12px
@@ -217,54 +255,160 @@ main {
     justify-content: space-between;
     align-items: center;
     padding: 10px 0;
-    border-bottom: 1px solid #222;
+    border-bottom: 1px solid #1a1a1a;
     font-size: 13px;
-    gap: 6px
+    gap: 8px
 }
 
 .ci button {
-    background: #b91c1c;
-    color: #fff;
+    background: #7f1d1d;
     border: none;
-    padding: 3px 8px;
-    border-radius: 3px;
+    color: #fca5a5;
     cursor: pointer;
-    font-size: 11px;
-    font-family: inherit
-}
-
-.total {
-    margin-top: 14px;
-    font-size: 16px;
-    font-weight: 700;
-    color: #fff
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 14px
 }
 
 .empty {
     color: #555;
     text-align: center;
-    padding: 32px 0;
+    padding: 30px 0;
     font-size: 13px
 }
 
-footer {
-    text-align: center;
-    padding: 20px;
-    color: #444;
-    font-size: 11px;
+.total {
+    margin-top: auto;
+    padding-top: 16px;
     border-top: 1px solid #1a1a1a;
-    margin-top: 40px
+    font-weight: 700;
+    color: #4ade80;
+    font-size: 15px
 }
 
-.btn.new-product {
-    background: linear-gradient(135deg, #7c3aed, #6d28d9);
-    border: 1px solid #7c3aed
+.overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .5);
+    z-index: 55
 }
 
-.btn.new-product:hover:not(:disabled) {
-    background: linear-gradient(135deg, #6d28d9, #5b21b6)
+.overlay.open {
+    display: block
 }
 
+/* Auth Modal */
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn .3s
+}
+
+.auth-box {
+    background: #141414;
+    border: 1px solid #2d2a4a;
+    border-radius: 14px;
+    padding: 36px 32px;
+    width: 360px;
+    max-width: 92vw;
+    animation: slideUp .3s ease
+}
+
+.auth-box h2 {
+    font-size: 22px;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #667eea, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent
+}
+
+.auth-sub {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 20px
+}
+
+.auth-error {
+    background: #2d1215;
+    color: #fca5a5;
+    border: 1px solid #7f1d1d;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 12px
+}
+
+.auth-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #e5e5e5;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color .15s
+}
+
+.auth-input:focus {
+    border-color: #667eea
+}
+
+.auth-input::placeholder {
+    color: #555
+}
+
+.auth-submit {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 6px;
+    transition: opacity .15s
+}
+
+.auth-submit:hover:not(:disabled) {
+    opacity: .9
+}
+
+.auth-submit:disabled {
+    opacity: .6;
+    cursor: wait
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #666
+}
+
+.auth-switch a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 4px
+}
+
+.auth-switch a:hover {
+    text-decoration: underline
+}
+
+/* Crash Overlay */
 .crash-box {
     background: #1a1a1a;
     border: 1px solid #ef4444;
@@ -346,6 +490,15 @@ footer {
         transform: translateY(0);
         opacity: 1
     }
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #444;
+    font-size: 11px;
+    border-top: 1px solid #1a1a1a;
+    margin-top: 40px
 }
 
 @media(max-width:600px) {
