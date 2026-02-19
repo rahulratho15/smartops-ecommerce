@@ -284,7 +284,7 @@ function checkDashboard() {
                 console.log('%c[SmartOps] ──────────────────────────────────────────', 'color: #667eea');
                 console.log('%c[SmartOps] Action: ' + latest.action, 'color: #22c55e; font-weight: bold; font-size: 14px');
                 console.log('%c[SmartOps] Scenario: ' + latest.scenario, 'color: #60a5fa');
-                console.log('%c[SmartOps] Reasoning: ' + (latest.reasoning || 'N/A'), 'color: #d4d4d4');
+                console.log('%c[SmartOps] Reasoning: ' + (latest.reasoning || 'N/A'), 'color: '#d4d4d4');
                 console.log('%c[SmartOps] Confidence: ' + ((latest.confidence || 0) * 100).toFixed(0) + '%', 'color: #fbbf24');
                 if (latest.executionDetails) {
                     console.log('%c[SmartOps] ✅ Result: ' + latest.executionDetails, 'color: #22c55e; font-weight: bold');
@@ -319,7 +319,7 @@ window.addEventListener('unhandledrejection', function (ev) { slog('CRASH_ERROR'
 
 /* Enter key support for auth */
 document.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && document.getElementById('auth-modal') && document.getElementById('auth-modal').style.display !== 'none') {
+    if (e.key === 'Enter' && document.getElementById('auth-modal').style.display !== 'none') {
         doAuth();
     }
 });
