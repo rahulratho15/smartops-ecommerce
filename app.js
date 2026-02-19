@@ -300,7 +300,7 @@ function checkDashboard() {
                     console.log('%c[SmartOps] 📋 Action Plan:', 'color: #60a5fa; font-weight: bold');
                     latest.actionPlan.steps.forEach(function (s, i) { console.log('%c  ' + (i + 1) + '. ' + s, 'color: #60a5fa'); });
                 }
-                console.log('%c[SmartOps] ══════════════════════════════════════════', 'color: #667eea; font-weight: bold');
+                console.log('%c[SmartOps] ═══���══════════════════════════════════════', 'color: #667eea; font-weight: bold');
 
                 if (latest.action === 'SELF_HEAL' && latest.executionStatus === 'EXECUTED') {
                     console.log('%c[SmartOps] 🎉 BUG FIXED! Refresh the page and try adding Smart Ring Pro again — it should work now!', 'color: #22c55e; font-weight: bold; font-size: 16px');
