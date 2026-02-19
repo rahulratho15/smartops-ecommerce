@@ -17,7 +17,12 @@ var PRODUCTS = [
 ];
 
 /* ── State ── */
-var currentUser = JSON.parse(localStorage.getItem('techvault_user') || 'null');
+var currentUser = null;
+try {
+    currentUser = JSON.parse(localStorage.getItem('techvault_user') || 'null');
+} catch (e) {
+    currentUser = null;
+}
 var cart = [];
 var authMode = 'login'; /* login or signup */
 var lastDecisionCount = 0;
@@ -42,49 +47,63 @@ startPolling();
 /* ══════════════════ AUTH ══════════════════ */
 
 function showAuth() {
-    document.getElementById('auth-modal').style.display = 'flex';
+    var el = document.getElementById('auth-modal');
+    if (el) el.style.display = 'flex';
 }
 
 function hideAuth() {
-    document.getElementById('auth-modal').style.display = 'none';
+    var el = document.getElementById('auth-modal');
+    if (el) el.style.display = 'none';
 }
 
 function toggleAuth(e) {
     if (e) e.preventDefault();
     var errEl = document.getElementById('auth-error');
-    errEl.style.display = 'none';
+    if (errEl) errEl.style.display = 'none';
+    var titleEl = document.getElementById('auth-title');
+    var subEl = document.getElementById('auth-sub');
+    var signupField = document.getElementById('signup-field');
+    var authBtn = document.getElementById('auth-btn');
+    var toggleText = document.getElementById('auth-toggle-text');
+    var toggleBtn = document.getElementById('auth-toggle');
+    
     if (authMode === 'login') {
         authMode = 'signup';
-        document.getElementById('auth-title').textContent = 'Create Account';
-        document.getElementById('auth-sub').textContent = 'Join TechVault';
-        document.getElementById('signup-field').style.display = 'block';
-        document.getElementById('auth-btn').textContent = 'Sign Up';
-        document.getElementById('auth-toggle-text').textContent = 'Already have an account?';
-        document.getElementById('auth-toggle').textContent = 'Sign In';
+        if (titleEl) titleEl.textContent = 'Create Account';
+        if (subEl) subEl.textContent = 'Join TechVault';
+        if (signupField) signupField.style.display = 'block';
+        if (authBtn) authBtn.textContent = 'Sign Up';
+        if (toggleText) toggleText.textContent = 'Already have an account?';
+        if (toggleBtn) toggleBtn.textContent = 'Sign In';
     } else {
         authMode = 'login';
-        document.getElementById('auth-title').textContent = 'Sign In';
-        document.getElementById('auth-sub').textContent = 'Welcome to TechVault';
-        document.getElementById('signup-field').style.display = 'none';
-        document.getElementById('auth-btn').textContent = 'Sign In';
-        document.getElementById('auth-toggle-text').textContent = "Don't have an account?";
-        document.getElementById('auth-toggle').textContent = 'Sign Up';
+        if (titleEl) titleEl.textContent = 'Sign In';
+        if (subEl) subEl.textContent = 'Welcome to TechVault';
+        if (signupField) signupField.style.display = 'none';
+        if (authBtn) authBtn.textContent = 'Sign In';
+        if (toggleText) toggleText.textContent = "Don't have an account?";
+        if (toggleBtn) toggleBtn.textContent = 'Sign Up';
     }
 }
 
 function doAuth() {
-    var email = document.getElementById('auth-email').value.trim();
-    var password = document.getElementById('auth-pass').value;
-    var name = document.getElementById('auth-name').value.trim();
+    var emailEl = document.getElementById('auth-email');
+    var passEl = document.getElementById('auth-pass');
+    var nameEl = document.getElementById('auth-name');
     var errEl = document.getElementById('auth-error');
     var btn = document.getElementById('auth-btn');
+    
+    if (!emailEl || !passEl) return;
+    
+    var email = emailEl.value.trim();
+    var password = passEl.value;
+    var name = nameEl ? nameEl.value.trim() : '';
 
-    if (!email || !password) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
-    if (authMode === 'signup' && !name) { errEl.textContent = 'Name is required'; errEl.style.display = 'block'; return; }
+    if (!email || !password) { if (errEl) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; } return; }
+    if (authMode === 'signup' && !name) { if (errEl) { errEl.textContent = 'Name is required'; errEl.style.display = 'block'; } return; }
 
-    errEl.style.display = 'none';
-    btn.disabled = true;
-    btn.textContent = authMode === 'login' ? 'Signing in...' : 'Creating account...';
+    if (errEl) errEl.style.display = 'none';
+    if (btn) { btn.disabled = true; btn.textContent = authMode === 'login' ? 'Signing in...' : 'Creating account...'; }
 
     var payload = authMode === 'signup'
         ? { action: 'signup', email: email, password: password, name: name }
@@ -100,48 +119,53 @@ function doAuth() {
         .then(function (r) { return r.json(); })
         .then(function (data) {
             if (!data.success) {
-                errEl.textContent = data.error || 'Authentication failed';
-                errEl.style.display = 'block';
-                btn.disabled = false;
-                btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
+                if (errEl) { errEl.textContent = data.error || 'Authentication failed'; errEl.style.display = 'block'; }
+                if (btn) { btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up'; }
                 return;
             }
 
             currentUser = data.user;
-            localStorage.setItem('techvault_user', JSON.stringify(currentUser));
+            try {
+                localStorage.setItem('techvault_user', JSON.stringify(currentUser));
+            } catch (e) {}
             console.log('%c[SmartOps] ✅ Logged in as: ' + currentUser.name + ' (' + currentUser.email + ')', 'color: #22c55e; font-weight: bold');
 
             hideAuth();
             showUser();
             fetchCart();
-            btn.disabled = false;
-            btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
+            if (btn) { btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up'; }
         })
         .catch(function (e) {
-            errEl.textContent = 'Network error: ' + e.message;
-            errEl.style.display = 'block';
-            btn.disabled = false;
-            btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
+            if (errEl) { errEl.textContent = 'Network error: ' + e.message; errEl.style.display = 'block'; }
+            if (btn) { btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up'; }
         });
 }
 
 function logout() {
-    console.log('%c[SmartOps] User logged out: ' + currentUser.email, 'color: #fbbf24');
+    console.log('%c[SmartOps] User logged out: ' + (currentUser ? currentUser.email : 'unknown'), 'color: #fbbf24');
     currentUser = null;
     cart = [];
-    localStorage.removeItem('techvault_user');
+    try {
+        localStorage.removeItem('techvault_user');
+    } catch (e) {}
     cartUI();
-    document.getElementById('user-badge').style.display = 'none';
-    document.getElementById('logout-btn').style.display = 'none';
+    var badge = document.getElementById('user-badge');
+    var logoutBtn = document.getElementById('logout-btn');
+    if (badge) badge.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
     showAuth();
 }
 
 function showUser() {
     var badge = document.getElementById('user-badge');
-    badge.textContent = currentUser.name;
-    badge.style.display = 'inline-block';
-    document.getElementById('logout-btn').style.display = 'inline-block';
-    document.getElementById('user-email').textContent = currentUser.email;
+    var logoutBtn = document.getElementById('logout-btn');
+    var userEmail = document.getElementById('user-email');
+    if (badge) {
+        badge.textContent = currentUser ? currentUser.name : '';
+        badge.style.display = 'inline-block';
+    }
+    if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    if (userEmail) userEmail.textContent = currentUser ? currentUser.email : '';
 }
 
 /* ══════════════════ CART (Server-Side) ══════════════════ */
@@ -171,7 +195,7 @@ function fetchCart() {
 function add(id) {
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
-    if (b.disabled) return;
+    if (!b || b.disabled) return;
     b.disabled = true;
     b.textContent = 'Adding...';
     b.className = b.className.replace(' done', '').replace(' fail', '');
@@ -195,21 +219,27 @@ function add(id) {
             console.log('%c[SmartOps] ✅ Product #' + id + ' added successfully (stored in DynamoDB)', 'color: #22c55e; font-weight: bold');
 
             slog('CART_ADD_SUCCESS', { productId: id, userId: currentUser.email });
-            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; }, 700);
+            setTimeout(function () { if (b) { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; } }, 700);
         })
         .catch(function (e) {
             console.error('%c[SmartOps] ❌ Cart error: ' + e.message, 'color: #ef4444');
-            b.textContent = 'Failed';
-            b.className = (id === 9 || id === 10 ? 'btn new-product fail' : 'btn fail');
+            if (b) {
+                b.textContent = 'Failed';
+                b.className = (id === 9 || id === 10 ? 'btn new-product fail' : 'btn fail');
+            }
             slog('CART_ADD_ERROR', { productId: id, error: e.message });
-            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; }, 1000);
+            setTimeout(function () { if (b) { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; } }, 1000);
         });
 }
 
 /* ══════════════════ UI ══════════════════ */
 
 function renderProducts() {
-    document.getElementById('products').innerHTML = PRODUCTS.map(function (p) {
+    var productsEl = document.getElementById('products');
+    var verBadge = document.getElementById('ver-badge');
+    if (!productsEl) return;
+    
+    productsEl.innerHTML = PRODUCTS.map(function (p) {
         var isNew = p.id === 9 || p.id === 10;
         return '<div class="card' + (isNew ? ' new-card' : '') + '" data-id="' + p.id + '">' +
             '<img src="' + p.img + '" alt="' + p.name + '" loading="lazy">' +
@@ -219,24 +249,34 @@ function renderProducts() {
             '<button class="btn' + (isNew ? ' new-product' : '') + '" id="btn-' + p.id + '" onclick="add(' + p.id + ')">Add to Cart</button>' +
             '</div></div>';
     }).join('');
-    document.getElementById('ver-badge').textContent = 'v2 New Product';
-    document.getElementById('ver-badge').style.background = '#1a1a2e';
-    document.getElementById('ver-badge').style.color = '#a78bfa';
-    document.getElementById('ver-badge').style.borderColor = '#2d2a4a';
+    
+    if (verBadge) {
+        verBadge.textContent = 'v2 New Product';
+        verBadge.style.background = '#1a1a2e';
+        verBadge.style.color = '#a78bfa';
+        verBadge.style.borderColor = '#2d2a4a';
+    }
 }
 
 function cartUI() {
+    var countEl = document.getElementById('count');
+    var cartItemsEl = document.getElementById('cart-items');
+    var totalEl = document.getElementById('total');
+    
     var count = cart.reduce(function (s, c) { return s + c.qty; }, 0);
-    document.getElementById('count').textContent = count;
-    var el = document.getElementById('cart-items');
-    if (!cart.length) { el.innerHTML = '<p class="empty">Cart is empty</p>'; document.getElementById('total').textContent = ''; return; }
-    el.innerHTML = cart.map(function (c) {
+    if (countEl) countEl.textContent = count;
+    
+    if (!cartItemsEl) return;
+    if (!cart.length) { cartItemsEl.innerHTML = '<p class="empty">Cart is empty</p>'; if (totalEl) totalEl.textContent = ''; return; }
+    
+    cartItemsEl.innerHTML = cart.map(function (c) {
         var p = PRODUCTS.find(function (x) { return x.id === c.productId; });
         if (!p) return '';
         return '<div class="ci"><span>' + p.name + ' x' + c.qty + '</span><span>$' + (p.price * c.qty) + '</span><button onclick="rm(' + c.productId + ')">×</button></div>';
     }).join('');
+    
     var total = cart.reduce(function (s, c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); return s + (p ? p.price * c.qty : 0); }, 0);
-    document.getElementById('total').textContent = 'Total: $' + total;
+    if (totalEl) totalEl.textContent = 'Total: $' + total;
 }
 
 function rm(id) {
@@ -253,14 +293,24 @@ function rm(id) {
     }).catch(function (e) { console.error('Remove error:', e); });
 }
 
-function tog() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
+function tog() { 
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    if (sidebar) sidebar.classList.toggle('open'); 
+    if (overlay) overlay.classList.toggle('open'); 
+}
 
 /* ══════════════════ LOGGING ══════════════════ */
 
 function slog(t, d) {
+    var sessionId = 'anon';
+    try {
+        sessionId = currentUser ? currentUser.email : 'anon';
+    } catch (e) {}
+    
     fetch(API + '/log', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventType: t, sessionId: currentUser ? currentUser.email : 'anon', version: VER, data: d, timestamp: Date.now() })
+        body: JSON.stringify({ eventType: t, sessionId: sessionId, version: VER, data: d, timestamp: Date.now() })
     }).catch(function () { });
 }
 
@@ -293,11 +343,11 @@ function checkDashboard() {
                     console.log('%c[SmartOps] 🧠 AI Thinking Chain:', 'color: #a78bfa; font-weight: bold');
                     if (latest.thinkingChain.observations) console.log('%c  📋 Observations: ' + latest.thinkingChain.observations, 'color: #a78bfa');
                     if (latest.thinkingChain.analysis) console.log('%c  🔬 Analysis: ' + latest.thinkingChain.analysis, 'color: #a78bfa');
-                    if (latest.thinkingChain.hypothesis) console.log('%c  💡 Hypothesis: ' + latest.thinkingChain.hypothesis, 'color: #a78bfa');
+                    if (latest.thinkingChain.hypothesis) console.log('%c  💡 Hypothesis: ' + latest.thinkingChain.hypothesis, 'color: '#a78bfa');
                     if (latest.thinkingChain.riskAssessment) console.log('%c  ⚠️ Risk: ' + latest.thinkingChain.riskAssessment, 'color: #f97316');
                 }
                 if (latest.actionPlan && latest.actionPlan.steps) {
-                    console.log('%c[SmartOps] 📋 Action Plan:', 'color: #60a5fa; font-weight: bold');
+                    console.log('%c[SmartOps] 📋 Action Plan:', 'color: '#60a5fa; font-weight: bold');
                     latest.actionPlan.steps.forEach(function (s, i) { console.log('%c  ' + (i + 1) + '. ' + s, 'color: #60a5fa'); });
                 }
                 console.log('%c[SmartOps] ══════════════════════════════════════════', 'color: #667eea; font-weight: bold');
@@ -314,12 +364,36 @@ function checkDashboard() {
 }
 
 /* ── Error handlers ── */
-window.onerror = function (m, u, l, c, e) { slog('CRASH_ERROR', { message: m, url: u, line: l, col: c, error: (e && e.stack) ? e.stack : e }); return true; };
-window.addEventListener('unhandledrejection', function (ev) { slog('CRASH_ERROR', { message: ev.reason && ev.reason.message || 'Promise rejected', stack: ev.reason && ev.reason.stack }); });
+window.onerror = function (m, u, l, c, e) { 
+    var errorDetails = (e && e.stack) ? e.stack : String(e);
+    slog('CRASH_ERROR', { message: String(m), url: String(u), line: Number(l), col: Number(c), error: errorDetails }); 
+    return true; 
+};
+window.addEventListener('unhandledrejection', function (ev) { 
+    var reason = ev.reason;
+    var message = 'Promise rejected';
+    var stack = '';
+    if (reason) {
+        if (typeof reason === 'string') {
+            message = reason;
+        } else if (reason.message) {
+            message = reason.message;
+            stack = reason.stack || '';
+        } else {
+            try {
+                message = JSON.stringify(reason);
+            } catch (e) {
+                message = String(reason);
+            }
+        }
+    }
+    slog('CRASH_ERROR', { message: message, stack: stack }); 
+});
 
 /* Enter key support for auth */
 document.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && document.getElementById('auth-modal').style.display !== 'none') {
+    var authModal = document.getElementById('auth-modal');
+    if (e.key === 'Enter' && authModal && authModal.style.display !== 'none') {
         doAuth();
     }
 });
