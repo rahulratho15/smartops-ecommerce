@@ -17,7 +17,13 @@ var PRODUCTS = [
 ];
 
 /* ── State ── */
-var currentUser = JSON.parse(localStorage.getItem('techvault_user') || 'null');
+var currentUser = null;
+try {
+    currentUser = JSON.parse(localStorage.getItem('techvault_user') || 'null');
+} catch (e) {
+    currentUser = null;
+    localStorage.removeItem('techvault_user');
+}
 var cart = [];
 var authMode = 'login'; /* login or signup */
 var lastDecisionCount = 0;
@@ -177,15 +183,10 @@ function fetchCart() {
                 cart = data.items;
                 cartUI();
                 console.log('%c[SmartOps] Cart loaded: ' + cart.length + ' items from DynamoDB', 'color: #22c55e');
-            } else {
-                cart = [];
-                cartUI();
             }
         })
         .catch(function (e) {
             console.error('[SmartOps] Cart fetch error:', e.message);
-            cart = [];
-            cartUI();
         });
 }
 
@@ -254,20 +255,20 @@ function renderProducts() {
 }
 
 function cartUI() {
+    if (!Array.isArray(cart)) cart = [];
     var countEl = document.getElementById('count');
     var cartItemsEl = document.getElementById('cart-items');
     var totalEl = document.getElementById('total');
-    var safeCart = Array.isArray(cart) ? cart : [];
-    var count = safeCart.reduce(function (s, c) { return s + c.qty; }, 0);
+    var count = cart.reduce(function (s, c) { return s + c.qty; }, 0);
     if (countEl) countEl.textContent = count;
     if (!cartItemsEl) return;
-    if (!safeCart.length) { cartItemsEl.innerHTML = '<p class="empty">Cart is empty</p>'; if (totalEl) totalEl.textContent = ''; return; }
-    cartItemsEl.innerHTML = safeCart.map(function (c) {
+    if (!cart.length) { cartItemsEl.innerHTML = '<p class="empty">Cart is empty</p>'; if (totalEl) totalEl.textContent = ''; return; }
+    cartItemsEl.innerHTML = cart.map(function (c) {
         var p = PRODUCTS.find(function (x) { return x.id === c.productId; });
         if (!p) return '';
         return '<div class="ci"><span>' + p.name + ' x' + c.qty + '</span><span>$' + (p.price * c.qty) + '</span><button onclick="rm(' + c.productId + ')">×</button></div>';
     }).join('');
-    var total = safeCart.reduce(function (s, c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); return s + (p ? p.price * c.qty : 0); }, 0);
+    var total = cart.reduce(function (s, c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); return s + (p ? p.price * c.qty : 0); }, 0);
     if (totalEl) totalEl.textContent = 'Total: $' + total;
 }
 
@@ -298,11 +299,11 @@ function tog() {
 function slog(t, d) {
     fetch(API + '/log', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventType: t, sessionId: currentUser ? currentUser.email : 'anon', version: VER, data: d, timestamp: Date.now() })
+        body: JSON.stringify({ eventType: t, sessionId: (currentUser && currentUser.email) ? currentUser.email : 'anon', version: VER, data: d, timestamp: Date.now() })
     }).catch(function () { });
 }
 
-/* ══════════════════ DASHBOARD POLLING ══════════════════ */
+/* ══════════════════ DASHBOARD POLLING ══���═══════════════ */
 
 function startPolling() {
     /* Get initial decision count */
@@ -352,8 +353,8 @@ function checkDashboard() {
 }
 
 /* ── Error handlers ── */
-window.onerror = function (m, u, l, c, e) { slog('CRASH_ERROR', { message: m, url: u, line: l, col: c, error: (e && e.stack) ? e.stack : String(e) }); return true; };
-window.addEventListener('unhandledrejection', function (ev) { slog('CRASH_ERROR', { message: ev.reason && ev.reason.message ? ev.reason.message : String(ev.reason), stack: ev.reason && ev.reason.stack ? ev.reason.stack : 'No stack' }); });
+window.onerror = function (m, u, l, c, e) { slog('CRASH_ERROR', { message: m, url: u, line: l, col: c, error: (e && e.stack) ? e.stack : e }); return true; };
+window.addEventListener('unhandledrejection', function (ev) { slog('CRASH_ERROR', { message: ev.reason && ev.reason.message || 'Promise rejected', stack: ev.reason && ev.reason.stack }); });
 
 /* Enter key support for auth */
 document.addEventListener('keydown', function (e) {
