@@ -19,7 +19,8 @@ var PRODUCTS = [
 /* ── State ── */
 var currentUser = null;
 try {
-    currentUser = JSON.parse(localStorage.getItem('techvault_user') || 'null');
+    var stored = localStorage.getItem('techvault_user');
+    currentUser = stored ? JSON.parse(stored) : null;
 } catch (e) {
     currentUser = null;
     localStorage.removeItem('techvault_user');
@@ -34,7 +35,7 @@ console.log('%c[SmartOps] 10 products (NEW: Smart Ring Pro #10)', 'color: #60a5f
 
 document.addEventListener('DOMContentLoaded', function() {
     if (currentUser) {
-        console.log('%c[SmartOps] User restored: ' + currentUser.name + ' (' + currentUser.email + ')', 'color: #22c55e');
+        console.log('%c[SmartOps] User restored: ' + (currentUser.name || 'Unknown') + ' (' + (currentUser.email || 'Unknown') + ')', 'color: #22c55e');
         hideAuth();
         showUser();
         fetchCart();
@@ -95,11 +96,20 @@ function toggleAuth(e) {
 }
 
 function doAuth() {
-    var email = document.getElementById('auth-email').value.trim();
-    var password = document.getElementById('auth-pass').value;
-    var name = document.getElementById('auth-name').value.trim();
+    var emailEl = document.getElementById('auth-email');
+    var passEl = document.getElementById('auth-pass');
+    var nameEl = document.getElementById('auth-name');
     var errEl = document.getElementById('auth-error');
     var btn = document.getElementById('auth-btn');
+
+    if (!emailEl || !passEl) {
+        if (errEl) { errEl.textContent = 'Form elements not found'; errEl.style.display = 'block'; }
+        return;
+    }
+
+    var email = emailEl.value.trim();
+    var password = passEl.value;
+    var name = nameEl ? nameEl.value.trim() : '';
 
     if (!email || !password) { if (errEl) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; } return; }
     if (authMode === 'signup' && !name) { if (errEl) { errEl.textContent = 'Name is required'; errEl.style.display = 'block'; } return; }
@@ -127,8 +137,12 @@ function doAuth() {
             }
 
             currentUser = data.user;
-            localStorage.setItem('techvault_user', JSON.stringify(currentUser));
-            console.log('%c[SmartOps] ✅ Logged in as: ' + currentUser.name + ' (' + currentUser.email + ')', 'color: #22c55e; font-weight: bold');
+            try {
+                localStorage.setItem('techvault_user', JSON.stringify(currentUser));
+            } catch (e) {
+                console.error('[SmartOps] localStorage error:', e);
+            }
+            console.log('%c[SmartOps] ✅ Logged in as: ' + (currentUser.name || 'Unknown') + ' (' + (currentUser.email || 'Unknown') + ')', 'color: #22c55e; font-weight: bold');
 
             hideAuth();
             showUser();
@@ -136,7 +150,8 @@ function doAuth() {
             if (btn) { btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up'; }
         })
         .catch(function (e) {
-            if (errEl) { errEl.textContent = 'Network error: ' + e.message; errEl.style.display = 'block'; }
+            var msg = (e && e.message) ? e.message : 'Network error';
+            if (errEl) { errEl.textContent = 'Network error: ' + msg; errEl.style.display = 'block'; }
             if (btn) { btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up'; }
         });
 }
@@ -145,7 +160,9 @@ function logout() {
     console.log('%c[SmartOps] User logged out: ' + (currentUser ? currentUser.email : 'unknown'), 'color: #fbbf24');
     currentUser = null;
     cart = [];
-    localStorage.removeItem('techvault_user');
+    try {
+        localStorage.removeItem('techvault_user');
+    } catch (e) {}
     cartUI();
     var userBadge = document.getElementById('user-badge');
     var logoutBtn = document.getElementById('logout-btn');
@@ -159,17 +176,17 @@ function showUser() {
     var logoutBtn = document.getElementById('logout-btn');
     var userEmail = document.getElementById('user-email');
     if (badge) {
-        badge.textContent = currentUser.name;
+        badge.textContent = currentUser ? (currentUser.name || 'User') : 'User';
         badge.style.display = 'inline-block';
     }
     if (logoutBtn) logoutBtn.style.display = 'inline-block';
-    if (userEmail) userEmail.textContent = currentUser.email;
+    if (userEmail) userEmail.textContent = currentUser ? (currentUser.email || '') : '';
 }
 
 /* ══════════════════ CART (Server-Side) ══════════════════ */
 
 function fetchCart() {
-    if (!currentUser) return;
+    if (!currentUser || !currentUser.email) return;
     console.log('%c[SmartOps] Fetching cart from DynamoDB for ' + currentUser.email + '...', 'color: #60a5fa');
 
     fetch(API + '/cart', {
@@ -179,25 +196,29 @@ function fetchCart() {
     })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-            if (data.success && Array.isArray(data.items)) {
+            if (data.success && data.items && Array.isArray(data.items)) {
                 cart = data.items;
                 cartUI();
                 console.log('%c[SmartOps] Cart loaded: ' + cart.length + ' items from DynamoDB', 'color: #22c55e');
+            } else if (data.success) {
+                cart = [];
+                cartUI();
             }
         })
         .catch(function (e) {
-            console.error('[SmartOps] Cart fetch error:', e.message);
+            var msg = (e && e.message) ? e.message : 'Unknown error';
+            console.error('[SmartOps] Cart fetch error:', msg);
         });
 }
 
 function add(id) {
-    if (!currentUser) { showAuth(); return; }
+    if (!currentUser || !currentUser.email) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (!b) return;
     if (b.disabled) return;
     b.disabled = true;
     b.textContent = 'Adding...';
-    b.className = b.className.replace(' done', '').replace(' fail', '');
+    b.className = (b.className || '').replace(' done', '').replace(' fail', '');
 
     console.log('%c[SmartOps] Adding product #' + id + ' to cart for ' + currentUser.email, 'color: #fbbf24');
     fetch(API + '/cart', {
@@ -222,10 +243,11 @@ function add(id) {
             setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; }, 700);
         })
         .catch(function (e) {
-            console.error('%c[SmartOps] ❌ Cart error: ' + e.message, 'color: #ef4444');
+            var msg = (e && e.message) ? e.message : 'Unknown error';
+            console.error('%c[SmartOps] ❌ Cart error: ' + msg, 'color: #ef4444');
             b.textContent = 'Failed';
             b.className = (id === 9 || id === 10 ? 'btn new-product fail' : 'btn fail');
-            slog('CART_ADD_ERROR', { productId: id, error: e.message });
+            slog('CART_ADD_ERROR', { productId: id, error: msg });
             setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; }, 1000);
         });
 }
@@ -255,25 +277,25 @@ function renderProducts() {
 }
 
 function cartUI() {
-    if (!Array.isArray(cart)) cart = [];
     var countEl = document.getElementById('count');
     var cartItemsEl = document.getElementById('cart-items');
     var totalEl = document.getElementById('total');
-    var count = cart.reduce(function (s, c) { return s + c.qty; }, 0);
+    if (!Array.isArray(cart)) cart = [];
+    var count = cart.reduce(function (s, c) { return s + (c.qty || 0); }, 0);
     if (countEl) countEl.textContent = count;
     if (!cartItemsEl) return;
     if (!cart.length) { cartItemsEl.innerHTML = '<p class="empty">Cart is empty</p>'; if (totalEl) totalEl.textContent = ''; return; }
     cartItemsEl.innerHTML = cart.map(function (c) {
         var p = PRODUCTS.find(function (x) { return x.id === c.productId; });
         if (!p) return '';
-        return '<div class="ci"><span>' + p.name + ' x' + c.qty + '</span><span>$' + (p.price * c.qty) + '</span><button onclick="rm(' + c.productId + ')">×</button></div>';
+        return '<div class="ci"><span>' + p.name + ' x' + (c.qty || 0) + '</span><span>$' + (p.price * (c.qty || 0)) + '</span><button onclick="rm(' + c.productId + ')">×</button></div>';
     }).join('');
-    var total = cart.reduce(function (s, c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); return s + (p ? p.price * c.qty : 0); }, 0);
+    var total = cart.reduce(function (s, c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); return s + (p ? p.price * (c.qty || 0) : 0); }, 0);
     if (totalEl) totalEl.textContent = 'Total: $' + total;
 }
 
 function rm(id) {
-    if (!currentUser) return;
+    if (!currentUser || !currentUser.email) return;
     console.log('%c[SmartOps] Removing product #' + id + ' from cart...', 'color: #fbbf24');
     fetch(API + '/cart', {
         method: 'POST',
@@ -284,7 +306,10 @@ function rm(id) {
         cart = cart.filter(function (c) { return c.productId !== id; });
         cartUI();
         console.log('%c[SmartOps] ✅ Product #' + id + ' removed from DynamoDB cart', 'color: #22c55e');
-    }).catch(function (e) { console.error('Remove error:', e); });
+    }).catch(function (e) { 
+        var msg = (e && e.message) ? e.message : 'Unknown error';
+        console.error('Remove error:', msg); 
+    });
 }
 
 function tog() { 
@@ -297,13 +322,14 @@ function tog() {
 /* ══════════════════ LOGGING ══════════════════ */
 
 function slog(t, d) {
+    var sessionId = (currentUser && currentUser.email) ? currentUser.email : 'anon';
     fetch(API + '/log', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventType: t, sessionId: (currentUser && currentUser.email) ? currentUser.email : 'anon', version: VER, data: d, timestamp: Date.now() })
+        body: JSON.stringify({ eventType: t, sessionId: sessionId, version: VER, data: d, timestamp: Date.now() })
     }).catch(function () { });
 }
 
-/* ══════════════════ DASHBOARD POLLING ══���═══════════════ */
+/* ══════════════════ DASHBOARD POLLING ══════════════════ */
 
 function startPolling() {
     /* Get initial decision count */
@@ -315,16 +341,18 @@ function checkDashboard() {
     fetch(DASH_API + '/dashboard/decisions')
         .then(function (r) { return r.json(); })
         .then(function (data) {
-            var total = data.stats ? data.stats.total : 0;
+            if (!data || !data.stats) return;
+            var total = data.stats.total || 0;
             if (total > lastDecisionCount && data.decisions && data.decisions.length > 0) {
                 var latest = data.decisions[0];
+                if (!latest) return;
                 console.log('%c[SmartOps] ══════════════════════════════════════════', 'color: #667eea; font-weight: bold');
                 console.log('%c[SmartOps] 🤖 AI DECISION DETECTED', 'color: #667eea; font-weight: bold; font-size: 16px');
                 console.log('%c[SmartOps] ──────────────────────────────────────────', 'color: #667eea');
-                console.log('%c[SmartOps] Action: ' + latest.action, 'color: #22c55e; font-weight: bold; font-size: 14px');
-                console.log('%c[SmartOps] Scenario: ' + latest.scenario, 'color: #60a5fa');
+                console.log('%c[SmartOps] Action: ' + (latest.action || 'N/A'), 'color: #22c55e; font-weight: bold; font-size: 14px');
+                console.log('%c[SmartOps] Scenario: ' + (latest.scenario || 'N/A'), 'color: #60a5fa');
                 console.log('%c[SmartOps] Reasoning: ' + (latest.reasoning || 'N/A'), 'color: #d4d4d4');
-                console.log('%c[SmartOps] Confidence: ' + ((latest.confidence || 0) * 100).toFixed(0) + '%', 'color: #fbbf24');
+                console.log('%c[SmartOps] Confidence: ' + (((latest.confidence || 0) * 100).toFixed(0)) + '%', 'color: #fbbf24');
                 if (latest.executionDetails) {
                     console.log('%c[SmartOps] ✅ Result: ' + latest.executionDetails, 'color: #22c55e; font-weight: bold');
                 }
@@ -353,8 +381,17 @@ function checkDashboard() {
 }
 
 /* ── Error handlers ── */
-window.onerror = function (m, u, l, c, e) { slog('CRASH_ERROR', { message: m, url: u, line: l, col: c, error: (e && e.stack) ? e.stack : e }); return true; };
-window.addEventListener('unhandledrejection', function (ev) { slog('CRASH_ERROR', { message: ev.reason && ev.reason.message || 'Promise rejected', stack: ev.reason && ev.reason.stack }); });
+window.onerror = function (m, u, l, c, e) { 
+    var errorDetails = (e && e.stack) ? e.stack : String(e || m || 'Unknown error');
+    slog('CRASH_ERROR', { message: m, url: u, line: l, col: c, error: errorDetails }); 
+    return true; 
+};
+window.addEventListener('unhandledrejection', function (ev) { 
+    var reason = ev.reason;
+    var msg = (reason && reason.message) ? reason.message : String(reason || 'Promise rejected');
+    var stack = (reason && reason.stack) ? reason.stack : 'No stack trace';
+    slog('CRASH_ERROR', { message: msg, stack: stack }); 
+});
 
 /* Enter key support for auth */
 document.addEventListener('keydown', function (e) {
