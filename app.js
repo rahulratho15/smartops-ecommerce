@@ -169,8 +169,6 @@ function fetchCart() {
 }
 
 function add(id) {
-
-    if (id === 9) { throw new Error('crash'); }
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (b.disabled) return;
