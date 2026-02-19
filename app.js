@@ -1,4 +1,4 @@
-﻿/* TechVault V2 — SmartOps Monitored — Auth + Server-Side Cart */
+/* TechVault V2 — SmartOps Monitored — Auth + Server-Side Cart + Smart Ring Pro */
 var API = 'https://kn6pfzv6b4.execute-api.us-east-1.amazonaws.com/prod';
 var DASH_API = 'https://5imr89vtpi.execute-api.us-east-1.amazonaws.com/prod';
 var VER = 'v2';
@@ -12,7 +12,8 @@ var PRODUCTS = [
     { id: 6, name: 'AirPods Pro 2', price: 179, img: 'https://picsum.photos/seed/airp2/300/200', cat: 'Audio' },
     { id: 7, name: 'Galaxy S24 Ultra', price: 699, img: 'https://picsum.photos/seed/gs24u/300/200', cat: 'Phones' },
     { id: 8, name: 'Bose QC Ultra', price: 249, img: 'https://picsum.photos/seed/bqcul/300/200', cat: 'Audio' },
-    { id: 9, name: 'Gaming Keyboard RGB', price: 149, img: 'https://picsum.photos/seed/gkrgb/300/200', cat: 'Peripherals' }
+    { id: 9, name: 'Gaming Keyboard RGB', price: 149, img: 'https://picsum.photos/seed/gkrgb/300/200', cat: 'Peripherals' },
+    { id: 10, name: 'Smart Ring Pro', price: 199, img: 'https://picsum.photos/seed/sring/300/200', cat: 'Wearables' }
 ];
 
 /* ── State ── */
@@ -23,7 +24,7 @@ var lastDecisionCount = 0;
 
 /* ── Init ── */
 console.log('%c[SmartOps] TechVault V2 loaded', 'color: #a78bfa; font-weight: bold; font-size: 14px');
-console.log('%c[SmartOps] 9 products (NEW: Gaming Keyboard RGB #9)', 'color: #60a5fa');
+console.log('%c[SmartOps] 10 products (NEW: Smart Ring Pro #10)', 'color: #60a5fa');
 
 if (currentUser) {
     console.log('%c[SmartOps] User restored: ' + currentUser.name + ' (' + currentUser.email + ')', 'color: #22c55e');
@@ -177,7 +178,10 @@ function add(id) {
 
     console.log('%c[SmartOps] Adding product #' + id + ' to cart for ' + currentUser.email, 'color: #fbbf24');
 
-    fetch(API + '/cart/add', {
+    /* V2 BUG: product 10 uses wrong API endpoint (developer mistake during rush deployment) */
+    var cartUrl = (id === 10) ? API + '/cart/addNew' : API + '/cart/add';
+
+    fetch(cartUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'add', userId: currentUser.email, productId: id, version: VER })
@@ -192,7 +196,7 @@ function add(id) {
                 slog('CART_BUTTON_BROKEN', { productId: id, error: data.error, message: data.message, userId: currentUser.email });
 
                 b.textContent = 'Error!';
-                b.className = (id === 9 ? 'btn new-product fail' : 'btn fail');
+                b.className = (id === 9 || id === 10 ? 'btn new-product fail' : 'btn fail');
 
                 setTimeout(function () { showCrashOverlay(id, data.error); }, 500);
                 return;
@@ -205,18 +209,18 @@ function add(id) {
             if (c) c.qty++; else cart.push({ productId: id, qty: 1 });
             cartUI();
             b.textContent = 'Added ✓';
-            b.className = (id === 9 ? 'btn new-product done' : 'btn done');
+            b.className = (id === 9 || id === 10 ? 'btn new-product done' : 'btn done');
             console.log('%c[SmartOps] ✅ Product #' + id + ' added successfully (stored in DynamoDB)', 'color: #22c55e; font-weight: bold');
 
             slog('CART_ADD_SUCCESS', { productId: id, userId: currentUser.email });
-            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 ? 'btn new-product' : 'btn'); b.disabled = false; }, 700);
+            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; }, 700);
         })
         .catch(function (e) {
             console.error('%c[SmartOps] ❌ Cart error: ' + e.message, 'color: #ef4444');
             b.textContent = 'Failed';
-            b.className = (id === 9 ? 'btn new-product fail' : 'btn fail');
+            b.className = (id === 9 || id === 10 ? 'btn new-product fail' : 'btn fail');
             slog('CART_ADD_ERROR', { productId: id, error: e.message });
-            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 ? 'btn new-product' : 'btn'); b.disabled = false; }, 1000);
+            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; }, 1000);
         });
 }
 
@@ -248,7 +252,7 @@ function showCrashOverlay(productId, errorCode) {
 
 function renderProducts() {
     document.getElementById('products').innerHTML = PRODUCTS.map(function (p) {
-        var isNew = p.id === 9;
+        var isNew = p.id === 9 || p.id === 10;
         return '<div class="card' + (isNew ? ' new-card' : '') + '" data-id="' + p.id + '">' +
             '<img src="' + p.img + '" alt="' + p.name + '" loading="lazy">' +
             (isNew ? '<span class="new-tag">NEW</span>' : '') +
@@ -341,7 +345,7 @@ function checkDashboard() {
                 console.log('%c[SmartOps] ══════════════════════════════════════════', 'color: #667eea; font-weight: bold');
 
                 if (latest.action === 'SELF_HEAL' && latest.executionStatus === 'EXECUTED') {
-                    console.log('%c[SmartOps] 🎉 BUG FIXED! Try adding Gaming Keyboard RGB again — it should work now!', 'color: #22c55e; font-weight: bold; font-size: 16px');
+                    console.log('%c[SmartOps] 🎉 BUG FIXED! Refresh the page and try adding Smart Ring Pro again — it should work now!', 'color: #22c55e; font-weight: bold; font-size: 16px');
                     var co = document.getElementById('crash-overlay');
                     if (co) co.remove();
                 }

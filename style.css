@@ -34,6 +34,7 @@ h1 {
     font-size: 20px;
     font-weight: 700;
     background: linear-gradient(135deg, #667eea, #a78bfa);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent
 }
@@ -324,6 +325,7 @@ h3 {
     font-size: 22px;
     margin-bottom: 4px;
     background: linear-gradient(135deg, #667eea, #a78bfa);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent
 }
