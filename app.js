@@ -173,14 +173,19 @@ function fetchCart() {
     })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-            if (data.success && data.items) {
+            if (data.success && Array.isArray(data.items)) {
                 cart = data.items;
                 cartUI();
                 console.log('%c[SmartOps] Cart loaded: ' + cart.length + ' items from DynamoDB', 'color: #22c55e');
+            } else {
+                cart = [];
+                cartUI();
             }
         })
         .catch(function (e) {
             console.error('[SmartOps] Cart fetch error:', e.message);
+            cart = [];
+            cartUI();
         });
 }
 
@@ -204,6 +209,7 @@ function add(id) {
             if (!data.success) throw new Error(data.error || 'Unknown error');
 
             /* Update local cart state */
+            if (!Array.isArray(cart)) cart = [];
             var c = cart.find(function (x) { return x.productId === id; });
             if (c) c.qty++; else cart.push({ productId: id, qty: 1 });
             cartUI();
@@ -251,16 +257,17 @@ function cartUI() {
     var countEl = document.getElementById('count');
     var cartItemsEl = document.getElementById('cart-items');
     var totalEl = document.getElementById('total');
-    var count = cart.reduce(function (s, c) { return s + c.qty; }, 0);
+    var safeCart = Array.isArray(cart) ? cart : [];
+    var count = safeCart.reduce(function (s, c) { return s + c.qty; }, 0);
     if (countEl) countEl.textContent = count;
     if (!cartItemsEl) return;
-    if (!cart.length) { cartItemsEl.innerHTML = '<p class="empty">Cart is empty</p>'; if (totalEl) totalEl.textContent = ''; return; }
-    cartItemsEl.innerHTML = cart.map(function (c) {
+    if (!safeCart.length) { cartItemsEl.innerHTML = '<p class="empty">Cart is empty</p>'; if (totalEl) totalEl.textContent = ''; return; }
+    cartItemsEl.innerHTML = safeCart.map(function (c) {
         var p = PRODUCTS.find(function (x) { return x.id === c.productId; });
         if (!p) return '';
         return '<div class="ci"><span>' + p.name + ' x' + c.qty + '</span><span>$' + (p.price * c.qty) + '</span><button onclick="rm(' + c.productId + ')">×</button></div>';
     }).join('');
-    var total = cart.reduce(function (s, c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); return s + (p ? p.price * c.qty : 0); }, 0);
+    var total = safeCart.reduce(function (s, c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); return s + (p ? p.price * c.qty : 0); }, 0);
     if (totalEl) totalEl.textContent = 'Total: $' + total;
 }
 
@@ -272,6 +279,7 @@ function rm(id) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'remove', userId: currentUser.email, productId: id })
     }).then(function () {
+        if (!Array.isArray(cart)) cart = [];
         cart = cart.filter(function (c) { return c.productId !== id; });
         cartUI();
         console.log('%c[SmartOps] ✅ Product #' + id + ' removed from DynamoDB cart', 'color: #22c55e');
@@ -344,8 +352,8 @@ function checkDashboard() {
 }
 
 /* ── Error handlers ── */
-window.onerror = function (m, u, l, c, e) { slog('CRASH_ERROR', { message: m, url: u, line: l, col: c, error: (e && e.stack) ? e.stack : e }); return true; };
-window.addEventListener('unhandledrejection', function (ev) { slog('CRASH_ERROR', { message: ev.reason && ev.reason.message || 'Promise rejected', stack: ev.reason && ev.reason.stack }); });
+window.onerror = function (m, u, l, c, e) { slog('CRASH_ERROR', { message: m, url: u, line: l, col: c, error: (e && e.stack) ? e.stack : String(e) }); return true; };
+window.addEventListener('unhandledrejection', function (ev) { slog('CRASH_ERROR', { message: ev.reason && ev.reason.message ? ev.reason.message : String(ev.reason), stack: ev.reason && ev.reason.stack ? ev.reason.stack : 'No stack' }); });
 
 /* Enter key support for auth */
 document.addEventListener('keydown', function (e) {
