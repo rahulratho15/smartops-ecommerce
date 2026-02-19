@@ -178,10 +178,18 @@ function add(id) {
 
     console.log('%c[SmartOps] Adding product #' + id + ' to cart for ' + currentUser.email, 'color: #fbbf24');
 
-    /* V2 BUG: product 10 uses wrong API endpoint (developer mistake during rush deployment) */
-    var cartUrl = (id === 10) ? API + '/cart/addNew' : API + '/cart/add';
+    /* V2 BUG: product 10 has broken validation — crashes instead of calling API */
+    if (id === 10) {
+        console.error('%c[SmartOps] ❌ BUG: Product #10 validation failed — missing cart handler config', 'color: #ef4444; font-weight: bold; font-size: 14px');
+        console.log('%c[SmartOps] 📝 Logging error to SmartOps monitoring...', 'color: #f97316');
+        slog('CART_BUTTON_BROKEN', { productId: id, error: 'PRODUCT_VALIDATION_CRASH', message: 'Product 10 cart handler not configured', userId: currentUser.email });
+        b.textContent = 'Error!';
+        b.className = 'btn new-product fail';
+        setTimeout(function () { showCrashOverlay(id, 'PRODUCT_VALIDATION_CRASH'); }, 500);
+        return;
+    }
 
-    fetch(cartUrl, {
+    fetch(API + '/cart/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'add', userId: currentUser.email, productId: id, version: VER })
