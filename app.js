@@ -338,63 +338,36 @@ function tog() {
 
 /* ══════════════════ LOGGING ══════════════════ */
 
+// Helper to serialize Error objects for JSON.stringify
+function serializeError(err) {
+    if (err instanceof Error) {
+        const obj = {
+            name: err.name,
+            message: err.message,
+            stack: err.stack,
+        };
+        // Copy any other enumerable properties that might be on the error object
+        for (let key in err) {
+            if (Object.prototype.hasOwnProperty.call(err, key) && typeof err[key] !== 'function') {
+                obj[key] = err[key];
+            }
+        }
+        return obj;
+    }
+    // If it's an object but not an Error, try to make a shallow copy
+    if (typeof err === 'object' && err !== null) {
+        return { ...err };
+    }
+    // For primitives, return as is
+    return err;
+}
+
 function slog(t, d) {
     var sessionId = (currentUser && currentUser.email) ? currentUser.email : 'anon';
     fetch(API + '/log', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eventType: t, sessionId: sessionId, version: VER, data: d, timestamp: Date.now() })
     }).catch(function () { });
-}
-
-/* ══════════════════ DASHBOARD POLLING ══════════════════ */
-
-function startPolling() {
-    /* Get initial decision count */
-    checkDashboard();
-    setInterval(checkDashboard, 5000);
-}
-
-function checkDashboard() {
-    fetch(DASH_API + '/dashboard/decisions')
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            if (!data || !data.stats) return;
-            var total = data.stats.total || 0;
-            if (total > lastDecisionCount && data.decisions && data.decisions.length > 0) {
-                var latest = data.decisions[0];
-                if (!latest) return;
-                console.log('%c[SmartOps] ══════════════════════════════════════════', 'color: #667eea; font-weight: bold');
-                console.log('%c[SmartOps] 🤖 AI DECISION DETECTED', 'color: #667eea; font-weight: bold; font-size: 16px');
-                console.log('%c[SmartOps] ──────────────────────────────────────────', 'color: #667eea');
-                console.log('%c[SmartOps] Action: ' + (latest.action || 'N/A'), 'color: #22c55e; font-weight: bold; font-size: 14px');
-                console.log('%c[SmartOps] Scenario: ' + (latest.scenario || 'N/A'), 'color: #60a5fa');
-                console.log('%c[SmartOps] Reasoning: ' + (latest.reasoning || 'N/A'), 'color: #d4d4d4');
-                console.log('%c[SmartOps] Confidence: ' + (((latest.confidence || 0) * 100).toFixed(0)) + '%', 'color: #fbbf24');
-                if (latest.executionDetails) {
-                    console.log('%c[SmartOps] ✅ Result: ' + latest.executionDetails, 'color: #22c55e; font-weight: bold');
-                }
-                if (latest.thinkingChain) {
-                    console.log('%c[SmartOps] 🧠 AI Thinking Chain:', 'color: #a78bfa; font-weight: bold');
-                    if (latest.thinkingChain.observations) console.log('%c  📋 Observations: ' + latest.thinkingChain.observations, 'color: #a78bfa');
-                    if (latest.thinkingChain.analysis) console.log('%c  🔬 Analysis: ' + latest.thinkingChain.analysis, 'color: #a78bfa');
-                    if (latest.thinkingChain.hypothesis) console.log('%c  💡 Hypothesis: ' + latest.thinkingChain.hypothesis, 'color: #a78bfa');
-                    if (latest.thinkingChain.riskAssessment) console.log('%c  ⚠️ Risk: ' + latest.thinkingChain.riskAssessment, 'color: #f97316');
-                }
-                if (latest.actionPlan && latest.actionPlan.steps) {
-                    console.log('%c[SmartOps] 📋 Action Plan:', 'color: #60a5fa; font-weight: bold');
-                    latest.actionPlan.steps.forEach(function (s, i) { console.log('%c  ' + (i + 1) + '. ' + s, 'color: #60a5fa'); });
-                }
-                console.log('%c[SmartOps] ══════════════════════════════════════════', 'color: #667eea; font-weight: bold');
-
-                if (latest.action === 'SELF_HEAL' && latest.executionStatus === 'EXECUTED') {
-                    console.log('%c[SmartOps] 🎉 BUG FIXED! Refresh the page and try adding Smart Ring Pro again — it should work now!', 'color: #22c55e; font-weight: bold; font-size: 16px');
-                    var co = document.getElementById('crash-overlay');
-                    if (co) co.remove();
-                }
-                lastDecisionCount = total;
-            }
-        })
-        .catch(function () { });
 }
 
 /* ── Error handlers ── */
@@ -406,12 +379,11 @@ window.onerror = function (m, u, l, c, e) {
         col: c
     };
 
-    // If 'e' is an object (including an empty object {} or an Error object), pass it directly.
-    // Otherwise, stringify the message or fallback.
-    if (e && typeof e === 'object') {
-        errorData.error = e;
+    // Serialize the error object if it exists, otherwise use the message
+    if (e) {
+        errorData.error = serializeError(e);
     } else {
-        errorData.error = String(e || m || 'Unknown error');
+        errorData.error = String(m || 'Unknown error');
     }
     
     slog('CRASH_ERROR', errorData); 
@@ -422,15 +394,14 @@ window.addEventListener('unhandledrejection', function (ev) {
     var reason = ev.reason;
     var errorData = {};
 
-    // If 'reason' is an object (including an empty object {} or an Error object), pass it directly.
-    // Also extract message and stack if available.
-    if (reason && typeof reason === 'object') {
-        errorData.reason = reason; // Log the raw reason object
-        errorData.message = (reason && reason.message) ? reason.message : 'Promise rejected with object';
-        errorData.stack = (reason && reason.stack) ? reason.stack : 'No stack trace for object rejection';
+    if (reason) {
+        var serializedReason = serializeError(reason);
+        errorData.reason = serializedReason;
+        // Also extract message and stack for top-level visibility in logs
+        errorData.message = serializedReason.message || String(reason) || 'Promise rejected';
+        errorData.stack = serializedReason.stack || 'No stack trace available';
     } else {
-        // Otherwise, stringify the reason or fallback.
-        errorData.message = String(reason || 'Promise rejected');
+        errorData.message = 'Promise rejected with no reason';
         errorData.stack = 'No stack trace';
     }
     
