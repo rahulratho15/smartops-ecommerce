@@ -213,6 +213,7 @@ function fetchCart() {
 
 function add(id) {
     if (!currentUser || !currentUser.email) { showAuth(); return; }
+    var userEmail = currentUser.email; // Capture email for async callbacks
     var b = document.getElementById('btn-' + id);
     if (!b) return;
     if (b.disabled) return;
@@ -220,11 +221,11 @@ function add(id) {
     b.textContent = 'Adding...';
     b.className = (b.className || '').replace(' done', '').replace(' fail', '');
 
-    console.log('%c[SmartOps] Adding product #' + id + ' to cart for ' + currentUser.email, 'color: #fbbf24');
+    console.log('%c[SmartOps] Adding product #' + id + ' to cart for ' + userEmail, 'color: #fbbf24');
     fetch(API + '/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add', userId: currentUser.email, productId: id, version: VER })
+        body: JSON.stringify({ action: 'add', userId: userEmail, productId: id, version: VER })
     })
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -239,7 +240,7 @@ function add(id) {
             b.className = (id === 9 || id === 10 ? 'btn new-product done' : 'btn done');
             console.log('%c[SmartOps] ✅ Product #' + id + ' added successfully (stored in DynamoDB)', 'color: #22c55e; font-weight: bold');
 
-            slog('CART_ADD_SUCCESS', { productId: id, userId: currentUser.email });
+            slog('CART_ADD_SUCCESS', { productId: id, userId: userEmail });
             setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; }, 700);
         })
         .catch(function (e) {
