@@ -265,7 +265,7 @@ function renderProducts() {
             '<img src="' + p.img + '" alt="' + p.name + '" loading="lazy">' +
             (isNew ? '<span class="new-tag">NEW</span>' : '') +
             '<div class="info"><span class="cat">' + p.cat + '</span>' +
-            '<h3>' + p.name + '</h3><p class="price">$' + p.price + '</p>' +
+            <h3>' + p.name + '</h3><p class="price">$' + p.price + '</p>' +
             '<button class="btn' + (isNew ? ' new-product' : '') + '" id="btn-' + p.id + '" onclick="add(' + p.id + ')">Add to Cart</button>' +
             '</div></div>';
     }).join('');
@@ -403,22 +403,32 @@ window.onerror = function (m, u, l, c, e) {
         message: m,
         url: u,
         line: l,
-        col: c
+        col: c,
+        timestamp: Date.now(),
+        type: 'onerror'
     };
 
-    // Explicitly extract properties from the Error object for robust JSON serialization
+    // If 'e' is an Error object, extract its properties
     if (e instanceof Error) {
         errorData.errorName = e.name;
         errorData.errorMessage = e.message;
         errorData.errorStack = e.stack;
+        // Copy other enumerable properties of the error object
+        for (var key in e) {
+            if (Object.prototype.hasOwnProperty.call(e, key) && typeof e[key] !== 'function') {
+                errorData['error_' + key] = e[key];
+            }
+        }
     } else if (e && typeof e === 'object') {
-        // If it's an object but not an Error instance, try to get message/stack
-        errorData.errorObject = e; // Log the raw object for inspection
-        errorData.errorMessage = e.message || String(e);
-        errorData.errorStack = e.stack || 'No stack trace for object';
+        // If it's an object but not an Error, try to stringify it
+        try {
+            errorData.rawErrorObject = JSON.stringify(e);
+        } catch (stringifyErr) {
+            errorData.rawErrorObject = 'Failed to stringify error object: ' + stringifyErr.message;
+        }
     } else {
-        errorData.errorMessage = String(e || m || 'Unknown error');
-        errorData.errorStack = 'No stack trace';
+        // Fallback for primitive errors (string, number, boolean, null, undefined)
+        errorData.rawError = String(e);
     }
     
     slog('CRASH_ERROR', errorData); 
@@ -427,20 +437,33 @@ window.onerror = function (m, u, l, c, e) {
 
 window.addEventListener('unhandledrejection', function (ev) { 
     var reason = ev.reason;
-    var errorData = {};
+    var errorData = {
+        timestamp: Date.now(),
+        type: 'unhandledrejection',
+        // Ensure a default message even if reason is null/undefined
+        message: String(reason || 'Promise rejected with no specific reason') 
+    };
 
-    // Explicitly extract properties from the reason object for robust JSON serialization
     if (reason instanceof Error) {
         errorData.errorName = reason.name;
         errorData.errorMessage = reason.message;
         errorData.errorStack = reason.stack;
+        // Copy other enumerable properties of the reason object
+        for (var key in reason) {
+            if (Object.prototype.hasOwnProperty.call(reason, key) && typeof reason[key] !== 'function') {
+                errorData['reason_' + key] = reason[key];
+            }
+        }
     } else if (reason && typeof reason === 'object') {
-        errorData.reasonObject = reason; // Log the raw object for inspection
-        errorData.errorMessage = reason.message || String(reason);
-        errorData.errorStack = reason.stack || 'No stack trace for object rejection';
+        // If it's an object but not an Error, try to stringify it
+        try {
+            errorData.rawReasonObject = JSON.stringify(reason);
+        } catch (stringifyErr) {
+            errorData.rawReasonObject = 'Failed to stringify reason object: ' + stringifyErr.message;
+        }
     } else {
-        errorData.errorMessage = String(reason || 'Promise rejected');
-        errorData.errorStack = 'No stack trace';
+        // For primitive reasons (string, number, boolean, null, undefined)
+        errorData.rawReason = String(reason);
     }
     
     slog('CRASH_ERROR', errorData); 
