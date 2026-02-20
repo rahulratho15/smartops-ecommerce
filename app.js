@@ -400,24 +400,25 @@ function checkDashboard() {
 /* ── Error handlers ── */
 window.onerror = function (m, u, l, c, e) { 
     var errorData = {
-        source: 'onerror',
         message: m,
         url: u,
         line: l,
         col: c
     };
 
+    // Explicitly extract properties from the Error object for robust JSON serialization
     if (e instanceof Error) {
         errorData.errorName = e.name;
-        errorData.errorMessage = e.message; // Capture message from Error object
-        errorData.errorStack = e.stack;     // Capture stack from Error object
-    } else if (e !== undefined && e !== null) {
-        // If 'e' is an object but not an Error, or a primitive, try to stringify it
-        try {
-            errorData.errorDetails = JSON.stringify(e);
-        } catch (jsonError) {
-            errorData.errorDetails = String(e);
-        }
+        errorData.errorMessage = e.message;
+        errorData.errorStack = e.stack;
+    } else if (e && typeof e === 'object') {
+        // If it's an object but not an Error instance, try to get message/stack
+        errorData.errorObject = e; // Log the raw object for inspection
+        errorData.errorMessage = e.message || String(e);
+        errorData.errorStack = e.stack || 'No stack trace for object';
+    } else {
+        errorData.errorMessage = String(e || m || 'Unknown error');
+        errorData.errorStack = 'No stack trace';
     }
     
     slog('CRASH_ERROR', errorData); 
@@ -426,26 +427,20 @@ window.onerror = function (m, u, l, c, e) {
 
 window.addEventListener('unhandledrejection', function (ev) { 
     var reason = ev.reason;
-    var errorData = {
-        source: 'unhandledrejection'
-    };
+    var errorData = {};
 
+    // Explicitly extract properties from the reason object for robust JSON serialization
     if (reason instanceof Error) {
         errorData.errorName = reason.name;
-        errorData.message = reason.message;
-        errorData.stack = reason.stack;
-    } else if (reason !== undefined && reason !== null) {
-        // If 'reason' is an object but not an Error, or a primitive, try to stringify it
-        try {
-            errorData.reasonDetails = JSON.stringify(reason);
-            // Provide a default message if the reason object doesn't have one
-            errorData.message = reason.message || 'Promise rejected with object';
-        } catch (jsonError) {
-            errorData.reasonDetails = String(reason);
-            errorData.message = 'Promise rejected with non-stringifiable object or primitive: ' + String(reason);
-        }
+        errorData.errorMessage = reason.message;
+        errorData.errorStack = reason.stack;
+    } else if (reason && typeof reason === 'object') {
+        errorData.reasonObject = reason; // Log the raw object for inspection
+        errorData.errorMessage = reason.message || String(reason);
+        errorData.errorStack = reason.stack || 'No stack trace for object rejection';
     } else {
-        errorData.message = 'Promise rejected with undefined or null reason';
+        errorData.errorMessage = String(reason || 'Promise rejected');
+        errorData.errorStack = 'No stack trace';
     }
     
     slog('CRASH_ERROR', errorData); 
