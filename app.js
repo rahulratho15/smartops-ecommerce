@@ -399,15 +399,42 @@ function checkDashboard() {
 
 /* ── Error handlers ── */
 window.onerror = function (m, u, l, c, e) { 
-    var errorDetails = (e && e.stack) ? e.stack : String(e || m || 'Unknown error');
-    slog('CRASH_ERROR', { message: m, url: u, line: l, col: c, error: errorDetails }); 
+    var errorData = {
+        message: m,
+        url: u,
+        line: l,
+        col: c
+    };
+
+    // If 'e' is an object (including an empty object {} or an Error object), pass it directly.
+    // Otherwise, stringify the message or fallback.
+    if (e && typeof e === 'object') {
+        errorData.error = e;
+    } else {
+        errorData.error = String(e || m || 'Unknown error');
+    }
+    
+    slog('CRASH_ERROR', errorData); 
     return true; 
 };
+
 window.addEventListener('unhandledrejection', function (ev) { 
     var reason = ev.reason;
-    var msg = (reason && reason.message) ? reason.message : String(reason || 'Promise rejected');
-    var stack = (reason && reason.stack) ? reason.stack : 'No stack trace';
-    slog('CRASH_ERROR', { message: msg, stack: stack }); 
+    var errorData = {};
+
+    // If 'reason' is an object (including an empty object {} or an Error object), pass it directly.
+    // Also extract message and stack if available.
+    if (reason && typeof reason === 'object') {
+        errorData.reason = reason; // Log the raw reason object
+        errorData.message = (reason && reason.message) ? reason.message : 'Promise rejected with object';
+        errorData.stack = (reason && reason.stack) ? reason.stack : 'No stack trace for object rejection';
+    } else {
+        // Otherwise, stringify the reason or fallback.
+        errorData.message = String(reason || 'Promise rejected');
+        errorData.stack = 'No stack trace';
+    }
+    
+    slog('CRASH_ERROR', errorData); 
 });
 
 /* Enter key support for auth */
