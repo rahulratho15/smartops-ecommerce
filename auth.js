@@ -1,6 +1,8 @@
 /* TechVault — Auth Module */
 
-var authMode = 'login'; // Initialize authMode to 'login' as a default state
+var authMode = 'login'; // Initialize authMode for the modal state
+var currentUser = null; // Initialize currentUser, will be populated from localStorage or API
+var cart = []; // Initialize cart, will be populated by fetchCart or similar
 
 function showAuth() {
     document.getElementById('auth-modal').style.display = 'flex';
@@ -53,9 +55,8 @@ function doAuth() {
 
     console.log('%c[SmartOps] Auth: ' + authMode + ' for ' + email, 'color: #fbbf24');
 
-    // BUG FIX: The authentication request was incorrectly sent to '/cart/add'.
-    // It should be sent to an authentication endpoint, e.g., '/auth'.
-    fetch(API + '/auth', { // Assuming '/auth' is the correct endpoint for both login and signup
+    // BUG FIX: Changed endpoint from '/cart/add' to '/auth' for authentication requests.
+    fetch(API + '/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -75,11 +76,10 @@ function doAuth() {
             console.log('%c[SmartOps] ✅ Logged in as: ' + currentUser.name + ' (' + currentUser.email + ')', 'color: #22c55e; font-weight: bold');
 
             hideAuth();
-            showUser();
-            // Assuming fetchCart is defined in cart.js or init.js
-            if (typeof fetchCart === 'function') {
-                fetchCart();
-            }
+            // Assuming showUser and fetchCart are defined globally or in other modules
+            if (typeof showUser === 'function') showUser();
+            if (typeof fetchCart === 'function') fetchCart();
+            
             btn.disabled = false;
             btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
         })
@@ -92,38 +92,29 @@ function doAuth() {
 }
 
 function logout() {
-    // BUG FIX: Added a check for currentUser before accessing its properties
-    // to prevent a TypeError crash if currentUser is null or undefined.
-    if (currentUser && currentUser.email) {
-        console.log('%c[SmartOps] User logged out: ' + currentUser.email, 'color: #fbbf24');
-    } else {
-        console.log('%c[SmartOps] User logged out (email not available or user not set)', 'color: #fbbf24');
-    }
+    console.log('%c[SmartOps] User logged out: ' + (currentUser ? currentUser.email : 'N/A'), 'color: #fbbf24');
     currentUser = null;
-    cart = []; // Assuming 'cart' is a global variable defined elsewhere (e.g., cart.js)
+    cart = [];
     localStorage.removeItem('techvault_user');
-    // Assuming cartUI is defined in cart.js or ui.js
-    if (typeof cartUI === 'function') {
-        cartUI();
-    }
+    // Assuming cartUI is defined globally or in another module
+    if (typeof cartUI === 'function') cartUI();
     document.getElementById('user-badge').style.display = 'none';
     document.getElementById('logout-btn').style.display = 'none';
     showAuth();
 }
 
 function showUser() {
-    // Added a defensive check for currentUser to prevent potential crashes
-    // if showUser is called when currentUser is not properly set.
-    if (!currentUser) {
-        console.warn('[SmartOps] Attempted to show user UI when currentUser is null or undefined.');
-        document.getElementById('user-badge').style.display = 'none';
-        document.getElementById('logout-btn').style.display = 'none';
-        // Optionally, hide other user-related UI elements here
-        return;
-    }
     var badge = document.getElementById('user-badge');
-    badge.textContent = currentUser.name;
-    badge.style.display = 'inline-block';
-    document.getElementById('logout-btn').style.display = 'inline-block';
-    document.getElementById('user-email').textContent = currentUser.email;
+    if (currentUser && badge) { // Add null check for currentUser and badge
+        badge.textContent = currentUser.name;
+        badge.style.display = 'inline-block';
+    }
+    var logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.style.display = 'inline-block';
+    }
+    var userEmail = document.getElementById('user-email');
+    if (currentUser && userEmail) { // Add null check for currentUser and userEmail
+        userEmail.textContent = currentUser.email;
+    }
 }
