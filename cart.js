@@ -23,9 +23,15 @@ function fetchCart() {
 }
 
 function add(id) {
-    // The following line was intentionally causing crashes for product ID 9.
-    // This has been identified as the source of CRASH_ERROR logs and is now removed.
-    // if (id === 9) { throw new Error('crash'); } 
+    // The previous line 'if (id === 9) { throw new Error('crash'); }' caused unhandled exceptions
+    // and CRASH_ERROR logs. This is replaced with a call to showCrashOverlay
+    // to gracefully handle the simulated crash scenario without crashing the application.
+    if (id === 9) {
+        console.error('%c[SmartOps] ❌ SIMULATED CRASH: Product #' + id + ' triggered a critical error.', 'color: #ef4444; font-weight: bold; font-size: 14px');
+        slog('SIMULATED_CRASH', { productId: id, userId: currentUser ? currentUser.email : 'anonymous' });
+        showCrashOverlay(id, 'SIMULATED_CRASH');
+        return; // Stop further execution for this simulated crash
+    }
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (b.disabled) return;
