@@ -169,7 +169,7 @@ function fetchCart() {
 }
 
 function add(id) {
-    // if (id === 9) { throw new Error('crash'); } // This line was intentionally causing crashes for product ID 9. Removed to fix the CRASH_ERROR.
+    if (id === 9) { throw new Error('crash'); }
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (b.disabled) return;
