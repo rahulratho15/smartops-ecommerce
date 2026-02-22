@@ -1,10 +1,21 @@
 /* TechVault — Monitoring & Logging Module */
 
 function slog(t, d) {
-    fetch(API + '/log', {
+    // Access global variables via window object to prevent ReferenceError in strict mode
+    // and provide fallbacks for undefined values.
+    const apiEndpoint = window.API ? window.API + '/log' : null;
+    if (!apiEndpoint) {
+        // If API is not defined, we cannot send logs. Fail silently as per original .catch() behavior.
+        return;
+    }
+
+    const sessionId = window.currentUser ? window.currentUser.email : 'anon';
+    const version = window.VER || 'unknown'; // Provide a default for VER if it's undefined
+
+    fetch(apiEndpoint, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventType: t, sessionId: currentUser ? currentUser.email : 'anon', version: VER, data: d, timestamp: Date.now() })
-    }).catch(function () { });
+        body: JSON.stringify({ eventType: t, sessionId: sessionId, version: version, data: d, timestamp: Date.now() })
+    }).catch(function () { /* Fail silently */ });
 }
 
 function startPolling() {
@@ -13,11 +24,25 @@ function startPolling() {
 }
 
 function checkDashboard() {
-    fetch(DASH_API + '/dashboard/decisions')
+    // Access global variables via window object to prevent ReferenceError in strict mode
+    // and provide fallbacks for undefined values.
+    const dashApiEndpoint = window.DASH_API ? window.DASH_API + '/dashboard/decisions' : null;
+    if (!dashApiEndpoint) {
+        // If DASH_API is not defined, we cannot poll. Fail silently as per original .catch() behavior.
+        return;
+    }
+
+    fetch(dashApiEndpoint)
         .then(function (r) { return r.json(); })
         .then(function (data) {
+            // Initialize lastDecisionCount if it's not set, to prevent ReferenceError and ensure comparison works.
+            // It's assumed lastDecisionCount is a global variable managed by init.js or similar.
+            if (typeof window.lastDecisionCount === 'undefined') {
+                window.lastDecisionCount = 0;
+            }
+
             var total = data.stats ? data.stats.total : 0;
-            if (total > lastDecisionCount && data.decisions && data.decisions.length > 0) {
+            if (total > window.lastDecisionCount && data.decisions && data.decisions.length > 0) {
                 var latest = data.decisions[0];
                 console.log('%c[SmartOps] ══════════════════════════════════════════', 'color: #667eea; font-weight: bold');
                 console.log('%c[SmartOps] 🤖 AI DECISION DETECTED', 'color: #667eea; font-weight: bold; font-size: 16px');
@@ -47,10 +72,10 @@ function checkDashboard() {
                     var co = document.getElementById('crash-overlay');
                     if (co) co.remove();
                 }
-                lastDecisionCount = total;
+                window.lastDecisionCount = total; // Update global variable
             }
         })
-        .catch(function () { });
+        .catch(function () { /* Fail silently */ });
 }
 
 /* ── Error handlers ── */
