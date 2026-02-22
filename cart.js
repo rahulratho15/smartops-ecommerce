@@ -23,7 +23,10 @@ function fetchCart() {
 }
 
 function add(id) {
-    // Removed intentional crash for product ID 9
+    // The line below was a deliberate crash for testing purposes.
+    // It is causing uncaught exceptions in production, leading to CRASH_ERROR logs.
+    // Removing this line to prevent unexpected application crashes.
+    // if (id === 9) { throw new Error('crash'); } 
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (b.disabled) return;
