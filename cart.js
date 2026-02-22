@@ -23,18 +23,11 @@ function fetchCart() {
 }
 
 function add(id) {
-    if (id === 9) { throw new Error('crash'); }
+    // The following line was an intentional crash for testing purposes.
+    // It has been removed to prevent unexpected application crashes in production.
+    // if (id === 9) { throw new Error('crash'); } 
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
-
-    // SmartOps AI: Added null check for button element to prevent crashes
-    // if the button for a given product ID is not found in the DOM.
-    if (!b) {
-        console.error(`%c[SmartOps] ❌ Cart error: Button for product #${id} not found. Cannot add to cart.`, 'color: #ef4444');
-        slog('CART_ADD_ERROR_NO_BUTTON', { productId: id, userId: currentUser.email, error: 'Button element not found' });
-        return; // Prevent further execution and potential TypeError
-    }
-
     if (b.disabled) return;
     b.disabled = true;
     b.textContent = 'Adding...';
