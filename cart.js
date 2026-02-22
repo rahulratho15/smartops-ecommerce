@@ -23,13 +23,35 @@ function fetchCart() {
 }
 
 function add(id) {
-    if (id === 9) { throw new Error('crash'); }
+    // The original line `if (id === 9) { throw new Error('crash'); }`
+    // caused a synchronous unhandled exception, leading to application crashes.
+    // This block is now modified to gracefully handle the simulated crash
+    // for product ID 9, consistent with how `data.bugSignal` is handled.
+
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (b.disabled) return;
     b.disabled = true;
     b.textContent = 'Adding...';
     b.className = b.className.replace(' done', '').replace(' fail', '');
+
+    if (id === 9) {
+        console.error('%c[SmartOps] ❌ SIMULATED BUG DETECTED: Product #' + id + ' triggered a test crash.', 'color: #ef4444; font-weight: bold; font-size: 14px');
+        console.log('%c[SmartOps] 📝 Logging simulated error to SmartOps monitoring system...', 'color: #f97316');
+
+        const simulatedError = 'PRODUCT_CONFIG_ERROR';
+        const simulatedMessage = 'Simulated crash for product ID 9.';
+        slog('CART_BUTTON_BROKEN', { productId: id, error: simulatedError, message: simulatedMessage, userId: currentUser.email });
+
+        b.textContent = 'Error!';
+        b.className = (id === 9 || id === 10 ? 'btn new-product fail' : 'btn fail');
+
+        // Show the crash overlay after a short delay, similar to the backend bugSignal
+        setTimeout(function () { showCrashOverlay(id, simulatedError); }, 500);
+        // The button remains disabled and in 'Error!' state until page refresh,
+        // which is the intended behavior for a "crash" scenario.
+        return; // Exit the function after handling the simulated crash
+    }
 
     console.log('%c[SmartOps] Adding product #' + id + ' to cart for ' + currentUser.email, 'color: #fbbf24');
     fetch(API + '/cart/add', {
