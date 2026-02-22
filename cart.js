@@ -23,15 +23,32 @@ function fetchCart() {
 }
 
 function add(id) {
-    // The previous line 'if (id === 9) { throw new Error('crash'); }' caused unhandled exceptions
-    // and CRASH_ERROR logs. This is replaced with a call to showCrashOverlay
-    // to gracefully handle the simulated crash scenario without crashing the application.
+    // The original line `if (id === 9) { throw new Error('crash'); }` caused a synchronous
+    // unhandled exception, bypassing the promise's .catch() block and leading to generic CRASH_ERROR logs.
+    // This fix handles the simulated crash gracefully, logs it via slog, and displays the crash overlay.
     if (id === 9) {
-        console.error('%c[SmartOps] ❌ SIMULATED CRASH: Product #' + id + ' triggered a critical error.', 'color: #ef4444; font-weight: bold; font-size: 14px');
-        slog('SIMULATED_CRASH', { productId: id, userId: currentUser ? currentUser.email : 'anonymous' });
-        showCrashOverlay(id, 'SIMULATED_CRASH');
-        return; // Stop further execution for this simulated crash
+        var b = document.getElementById('btn-' + id);
+        if (b) { // Ensure button exists before trying to modify it
+            b.disabled = true;
+            b.textContent = 'Crashing...';
+            b.className = (id === 9 || id === 10 ? 'btn new-product fail' : 'btn fail');
+        }
+
+        console.error('%c[SmartOps] ❌ SIMULATED CRASH: Product #' + id + ' triggered a client-side error.', 'color: #ef4444; font-weight: bold; font-size: 14px');
+        // Log the simulated crash using slog for monitoring
+        slog('CLIENT_CRASH_SIMULATED', { productId: id, error: 'SIMULATED_CRASH', message: 'Deliberate client-side crash for product 9', userId: currentUser ? currentUser.email : 'anonymous' });
+
+        setTimeout(function () {
+            showCrashOverlay(id, 'CLIENT_CRASH'); // Show the crash overlay
+            if (b) { // Reset button state after showing overlay
+                b.textContent = 'Add to Cart';
+                b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn');
+                b.disabled = false;
+            }
+        }, 500);
+        return; // Stop further execution of the add function
     }
+
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (b.disabled) return;
