@@ -169,7 +169,9 @@ function fetchCart() {
 }
 
 function add(id) {
-    // if (id === 9) { throw new Error('crash'); } // This line was causing the CRASH_ERROR for product ID 9
+    // The following line was intentionally causing a crash for product ID 9.
+    // This has been removed to fix the production errors.
+    // if (id === 9) { throw new Error('crash'); } 
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (b.disabled) return;
@@ -303,7 +305,7 @@ function slog(t, d) {
     }).catch(function () { });
 }
 
-/* ═══════════��══════ DASHBOARD POLLING ══════════════════ */
+/* ══════════════════ DASHBOARD POLLING ══════════════════ */
 
 function startPolling() {
     /* Get initial decision count */
