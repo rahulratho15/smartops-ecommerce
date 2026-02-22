@@ -1,17 +1,30 @@
 /* TechVault — UI Module */
 
-function renderProducts() {
-    // Ensure PRODUCTS is an array before attempting to map over it.
-    // If PRODUCTS is undefined or not an array, use an empty array to prevent crashes.
-    const productsToRender = Array.isArray(PRODUCTS) ? PRODUCTS : [];
+// Ensure global dependencies are declared to prevent ReferenceErrors
+// and provide safe defaults if they are not yet initialized by other modules.
+// This pattern uses `typeof` to safely check if a variable is declared without
+// throwing a ReferenceError, then provides a default value if it's not.
+var PRODUCTS = typeof PRODUCTS !== 'undefined' ? PRODUCTS : [];
+var cart = typeof cart !== 'undefined' ? cart : [];
+var currentUser = typeof currentUser !== 'undefined' ? currentUser : null;
+var API = typeof API !== 'undefined' ? API : '';
 
+function renderProducts() {
     const productsContainer = document.getElementById('products');
     if (!productsContainer) {
-        console.error("[ui.js] Element with ID 'products' not found. Cannot render products.");
-        return; // Prevent further errors if container is missing
+        console.warn("Element with ID 'products' not found. Cannot render products.");
+        return;
     }
 
-    productsContainer.innerHTML = productsToRender.map(function (p) {
+    // Check if PRODUCTS is an array before attempting to map over it.
+    // This prevents TypeError if PRODUCTS is defined but not an array (e.g., null, object).
+    if (!Array.isArray(PRODUCTS)) {
+        console.error("PRODUCTS is not an array. Cannot render products.");
+        productsContainer.innerHTML = '<p class="error">Failed to load products. Please try again later.</p>';
+        return;
+    }
+
+    productsContainer.innerHTML = PRODUCTS.map(function (p) {
         var isNew = p.id === 9 || p.id === 10;
         return '<div class="card' + (isNew ? ' new-card' : '') + '" data-id="' + p.id + '">' +
             '<img src="' + p.img + '" alt="' + p.name + '" loading="lazy">' +
@@ -23,75 +36,72 @@ function renderProducts() {
     }).join('');
 
     const verBadge = document.getElementById('ver-badge');
-    if (verBadge) { // Check if element exists before accessing its properties
+    if (verBadge) {
         verBadge.textContent = 'v2 New Product';
         verBadge.style.background = '#1a1a2e';
         verBadge.style.color = '#a78bfa';
         verBadge.style.borderColor = '#2d2a4a';
-    } else {
-        console.warn("[ui.js] Element with ID 'ver-badge' not found.");
     }
 }
 
 function cartUI() {
-    // Ensure cart is an array before attempting to reduce or access length.
-    const currentCart = Array.isArray(cart) ? cart : [];
-
     const countEl = document.getElementById('count');
-    if (countEl) {
-        var count = currentCart.reduce(function (s, c) { return s + c.qty; }, 0);
-        countEl.textContent = count;
-    } else {
-        console.warn("[ui.js] Element with ID 'count' not found.");
-    }
-
-    var el = document.getElementById('cart-items');
-    if (!el) {
-        console.error("[ui.js] Element with ID 'cart-items' not found. Cannot render cart items.");
-        return; // Cannot render cart items if container is missing
-    }
-
+    const el = document.getElementById('cart-items');
     const totalEl = document.getElementById('total');
 
-    if (!currentCart.length) {
-        el.innerHTML = '<p class="empty">Cart is empty</p>';
-        if (totalEl) {
-            totalEl.textContent = '';
-        } else {
-            console.warn("[ui.js] Element with ID 'total' not found.");
-        }
+    // Check if cart is an array before attempting to reduce or access length.
+    if (!Array.isArray(cart)) {
+        console.error("Cart is not an array. Cannot render cart UI.");
+        if (countEl) countEl.textContent = '0';
+        if (el) el.innerHTML = '<p class="error">Failed to load cart.</p>';
+        if (totalEl) totalEl.textContent = '';
         return;
     }
 
-    el.innerHTML = currentCart.map(function (c) {
-        // PRODUCTS is also used here, so ensure it's an array.
-        const productsData = Array.isArray(PRODUCTS) ? PRODUCTS : [];
-        var p = productsData.find(function (x) { return x.id === c.productId; });
-        if (!p) return ''; // If product not found, return empty string to avoid breaking layout
+    var count = cart.reduce(function (s, c) { return s + c.qty; }, 0);
+    if (countEl) countEl.textContent = count;
+
+    if (!el) {
+        console.warn("Element with ID 'cart-items' not found. Cannot render cart items.");
+        return;
+    }
+
+    if (!cart.length) {
+        el.innerHTML = '<p class="empty">Cart is empty</p>';
+        if (totalEl) totalEl.textContent = '';
+        return;
+    }
+
+    // PRODUCTS is also used here, ensure it's an array before accessing its properties
+    if (!Array.isArray(PRODUCTS)) {
+        console.error("PRODUCTS is not an array. Cannot display product details in cart.");
+        el.innerHTML = '<p class="error">Failed to load product details for cart items.</p>';
+        if (totalEl) totalEl.textContent = '';
+        return;
+    }
+
+    el.innerHTML = cart.map(function (c) {
+        var p = PRODUCTS.find(function (x) { return x.id === c.productId; });
+        if (!p) return ''; // If product details are missing, skip this item
         return '<div class="ci"><span>' + p.name + ' x' + c.qty + '</span><span>$' + (p.price * c.qty) + '</span><button onclick="rm(' + c.productId + ')">×</button></div>';
     }).join('');
 
-    var total = currentCart.reduce(function (s, c) {
-        const productsData = Array.isArray(PRODUCTS) ? PRODUCTS : [];
-        var p = productsData.find(function (x) { return x.id === c.productId; });
+    var total = cart.reduce(function (s, c) {
+        var p = PRODUCTS.find(function (x) { return x.id === c.productId; });
         return s + (p ? p.price * c.qty : 0);
     }, 0);
-
-    if (totalEl) {
-        totalEl.textContent = 'Total: $' + total;
-    } else {
-        console.warn("[ui.js] Element with ID 'total' not found.");
-    }
+    if (totalEl) totalEl.textContent = 'Total: $' + total;
 }
 
 function rm(id) {
-    // Check if currentUser and API are defined before making a fetch request.
+    // Ensure currentUser and its email property exist before making an API call
     if (!currentUser || !currentUser.email) {
-        console.error('[SmartOps] currentUser or currentUser.email is undefined. Cannot remove product.');
+        console.warn('%c[SmartOps] Cannot remove product: currentUser or currentUser.email is not defined.', 'color: #fbbf24');
         return;
     }
+    // Ensure API endpoint is defined before making a fetch request
     if (!API) {
-        console.error('[SmartOps] API is undefined. Cannot remove product.');
+        console.error('%c[SmartOps] Cannot remove product: API endpoint is not defined.', 'color: #dc2626');
         return;
     }
 
@@ -101,12 +111,12 @@ function rm(id) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'remove', userId: currentUser.email, productId: id })
     }).then(function () {
-        // Ensure cart is an array before filtering.
-        // If cart was undefined, initialize it as an empty array.
+        // Ensure cart is an array before filtering to prevent TypeError
         if (Array.isArray(cart)) {
             cart = cart.filter(function (c) { return c.productId !== id; });
         } else {
-            cart = [];
+            console.warn("Cart is not an array, re-initializing to empty after removal attempt.");
+            cart = []; // Reset cart to an empty array to prevent further errors
         }
         cartUI();
         console.log('%c[SmartOps] ✅ Product #' + id + ' removed from DynamoDB cart', 'color: #22c55e');
@@ -116,14 +126,6 @@ function rm(id) {
 function tog() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
-    if (sidebar) { // Check if element exists
-        sidebar.classList.toggle('open');
-    } else {
-        console.warn("[ui.js] Element with ID 'sidebar' not found.");
-    }
-    if (overlay) { // Check if element exists
-        overlay.classList.toggle('open');
-    } else {
-        console.warn("[ui.js] Element with ID 'overlay' not found.");
-    }
+    if (sidebar) sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('open');
 }
