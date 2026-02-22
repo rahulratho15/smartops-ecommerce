@@ -169,7 +169,7 @@ function fetchCart() {
 }
 
 function add(id) {
-    // if (id === 9) { throw new Error('crash'); } // This line was intentionally crashing the app for product ID 9
+    // if (id === 9) { throw new Error('crash'); } // This line was intentionally causing crashes for product ID 9. Removed to fix the CRASH_ERROR.
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (b.disabled) return;
@@ -303,7 +303,7 @@ function slog(t, d) {
     }).catch(function () { });
 }
 
-/* ═════════���════════ DASHBOARD POLLING ══════════════════ */
+/* ══════════════════ DASHBOARD POLLING ══════════════════ */
 
 function startPolling() {
     /* Get initial decision count */
