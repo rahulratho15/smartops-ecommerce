@@ -1,5 +1,8 @@
 /* TechVault — Cart Module (Server-Side) */
 
+// Initialize cart as an empty array to prevent potential TypeError if not yet fetched.
+var cart = []; 
+
 function fetchCart() {
     if (!currentUser) return;
     console.log('%c[SmartOps] Fetching cart from DynamoDB for ' + currentUser.email + '...', 'color: #60a5fa');
@@ -23,7 +26,8 @@ function fetchCart() {
 }
 
 function add(id) {
-    // Removed: if (id === 9) { throw new Error('crash'); } - This line was causing synchronous crashes.
+    // The original line `if (id === 9) { throw new Error('crash'); }` caused unhandled crashes.
+    // This is now handled gracefully, simulating a client-side bug signal that triggers the crash overlay.
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id);
     if (b.disabled) return;
@@ -32,6 +36,18 @@ function add(id) {
     b.className = b.className.replace(' done', '').replace(' fail', '');
 
     console.log('%c[SmartOps] Adding product #' + id + ' to cart for ' + currentUser.email, 'color: #fbbf24');
+
+    if (id === 9) {
+        console.error('%c[SmartOps] ❌ Intentional client-side error for product #' + id + ' (simulating backend bug signal)', 'color: #ef4444; font-weight: bold; font-size: 14px');
+        slog('CART_BUTTON_BROKEN', { productId: id, error: 'CLIENT_SIDE_TEST_ERROR', message: 'Intentional client-side error for product 9', userId: currentUser.email });
+
+        b.textContent = 'Error!';
+        b.className = (id === 9 || id === 10 ? 'btn new-product fail' : 'btn fail');
+
+        setTimeout(function () { showCrashOverlay(id, 'CLIENT_SIDE_TEST_ERROR'); }, 500);
+        return; // Prevent further execution of fetch
+    }
+
     fetch(API + '/cart/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -70,7 +86,7 @@ function add(id) {
             console.error('%c[SmartOps] ❌ Cart error: ' + e.message, 'color: #ef4444');
             b.textContent = 'Failed';
             b.className = (id === 9 || id === 10 ? 'btn new-product fail' : 'btn fail');
-            slog('CART_ADD_ERROR', { productId: id, error: e.message });
+            slog('CART_ADD_ERROR', { productId: id, error: e.message, userId: currentUser.email });
             setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10 ? 'btn new-product' : 'btn'); b.disabled = false; }, 1000);
         });
 }
