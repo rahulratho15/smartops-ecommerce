@@ -51,7 +51,7 @@ function doAuth() {
 
     console.log('%c[SmartOps] Auth: ' + authMode + ' for ' + email, 'color: #fbbf24');
 
-    fetch(API + '/cart/add', {
+    fetch(API + '/auth', { // BUG FIX: Changed '/cart/add' to '/auth' for authentication requests
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
