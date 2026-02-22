@@ -9,45 +9,94 @@ var currentUser = null; // Will hold the logged-in user object
 // Assuming fetchCart and cartUI are global functions defined in cart.js or ui.js
 
 function showAuth() {
-    document.getElementById('auth-modal').style.display = 'flex';
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) {
+        authModal.style.display = 'flex';
+    } else {
+        console.warn('[SmartOps] Auth: Element "auth-modal" not found for showAuth.');
+    }
 }
 
 function hideAuth() {
-    document.getElementById('auth-modal').style.display = 'none';
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) {
+        authModal.style.display = 'none';
+    } else {
+        console.warn('[SmartOps] Auth: Element "auth-modal" not found for hideAuth.');
+    }
 }
 
 function toggleAuth(e) {
     if (e) e.preventDefault();
-    var errEl = document.getElementById('auth-error');
-    errEl.style.display = 'none';
+
+    const errEl = document.getElementById('auth-error');
+    if (errEl) errEl.style.display = 'none';
+
+    const authTitle = document.getElementById('auth-title');
+    const authSub = document.getElementById('auth-sub');
+    const signupField = document.getElementById('signup-field');
+    const authBtn = document.getElementById('auth-btn');
+    const authToggleText = document.getElementById('auth-toggle-text');
+    const authToggle = document.getElementById('auth-toggle');
+
     if (authMode === 'login') {
         authMode = 'signup';
-        document.getElementById('auth-title').textContent = 'Create Account';
-        document.getElementById('auth-sub').textContent = 'Join TechVault';
-        document.getElementById('signup-field').style.display = 'block';
-        document.getElementById('auth-btn').textContent = 'Sign Up';
-        document.getElementById('auth-toggle-text').textContent = 'Already have an account?';
-        document.getElementById('auth-toggle').textContent = 'Sign In';
+        if (authTitle) authTitle.textContent = 'Create Account';
+        if (authSub) authSub.textContent = 'Join TechVault';
+        if (signupField) signupField.style.display = 'block';
+        if (authBtn) authBtn.textContent = 'Sign Up';
+        if (authToggleText) authToggleText.textContent = 'Already have an account?';
+        if (authToggle) authToggle.textContent = 'Sign In';
     } else {
         authMode = 'login';
-        document.getElementById('auth-title').textContent = 'Sign In';
-        document.getElementById('auth-sub').textContent = 'Welcome to TechVault';
-        document.getElementById('signup-field').style.display = 'none';
-        document.getElementById('auth-btn').textContent = 'Sign In';
-        document.getElementById('auth-toggle-text').textContent = "Don't have an account?";
-        document.getElementById('auth-toggle').textContent = 'Sign Up';
+        if (authTitle) authTitle.textContent = 'Sign In';
+        if (authSub) authSub.textContent = 'Welcome to TechVault';
+        if (signupField) signupField.style.display = 'none';
+        if (authBtn) authBtn.textContent = 'Sign In';
+        if (authToggleText) authToggleText.textContent = "Don't have an account?";
+        if (authToggle) authToggle.textContent = 'Sign Up';
     }
 }
 
 function doAuth() {
-    var email = document.getElementById('auth-email').value.trim();
-    var password = document.getElementById('auth-pass').value;
-    var name = document.getElementById('auth-name').value.trim();
-    var errEl = document.getElementById('auth-error');
-    var btn = document.getElementById('auth-btn');
+    const emailInput = document.getElementById('auth-email');
+    const passwordInput = document.getElementById('auth-pass');
+    const nameInput = document.getElementById('auth-name'); // Only relevant for signup
+    const errEl = document.getElementById('auth-error');
+    const btn = document.getElementById('auth-btn');
 
-    if (!email || !password) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
-    if (authMode === 'signup' && !name) { errEl.textContent = 'Name is required'; errEl.style.display = 'block'; return; }
+    // Validate critical DOM elements exist before proceeding
+    if (!emailInput || !passwordInput || !errEl || !btn) {
+        if (errEl) errEl.textContent = 'Missing critical form elements. Please refresh.';
+        console.error('[SmartOps] Auth: Missing critical DOM elements for authentication form.');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
+        }
+        return;
+    }
+    if (authMode === 'signup' && !nameInput) {
+        errEl.textContent = 'Missing name field for signup. Please refresh.';
+        console.error('[SmartOps] Auth: Missing name input element for signup.');
+        btn.disabled = false;
+        btn.textContent = 'Sign Up';
+        return;
+    }
+
+    var email = emailInput.value.trim();
+    var password = passwordInput.value;
+    var name = nameInput ? nameInput.value.trim() : ''; // Get name only if element exists
+
+    if (!email || !password) {
+        errEl.textContent = 'Email and password required';
+        errEl.style.display = 'block';
+        return;
+    }
+    if (authMode === 'signup' && !name) {
+        errEl.textContent = 'Name is required';
+        errEl.style.display = 'block';
+        return;
+    }
 
     errEl.style.display = 'none';
     btn.disabled = true;
@@ -59,20 +108,16 @@ function doAuth() {
 
     console.log('%c[SmartOps] Auth: ' + authMode + ' for ' + email, 'color: #fbbf24');
 
-    // BUG FIX: Changed API endpoint from '/cart/add' to '/auth' for authentication
-    // The payload already contains 'action' to differentiate login/signup.
     fetch(API + '/auth', { // Assuming API is defined globally by config.js
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
         .then(function (r) {
-            // Check for HTTP errors (e.g., 400, 500) before trying to parse JSON
             if (!r.ok) {
                 return r.json().then(errorData => {
                     throw new Error(errorData.error || `Server error: ${r.status} ${r.statusText}`);
                 }).catch(() => {
-                    // Fallback if response is not JSON (e.g., HTML error page)
                     throw new Error(`Server error: ${r.status} ${r.statusText}`);
                 });
             }
@@ -92,8 +137,8 @@ function doAuth() {
             console.log('%c[SmartOps] ✅ Logged in as: ' + currentUser.name + ' (' + currentUser.email + ')', 'color: #22c55e; font-weight: bold');
 
             hideAuth();
-            showUser(); // Assuming showUser is defined globally or in ui.js
-            // Safely call fetchCart if it exists (likely from cart.js)
+            showUser(); // showUser is defined in this module, call directly.
+            
             if (typeof fetchCart === 'function') {
                 fetchCart();
             }
@@ -101,15 +146,20 @@ function doAuth() {
             btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
         })
         .catch(function (e) {
-            errEl.textContent = 'Authentication error: ' + e.message;
-            errEl.style.display = 'block';
-            btn.disabled = false;
-            btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
+            if (errEl) {
+                errEl.textContent = 'Authentication error: ' + e.message;
+                errEl.style.display = 'block';
+            } else {
+                console.error('[SmartOps] Auth: Authentication error, but error element not found:', e.message);
+            }
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
+            }
         });
 }
 
 function logout() {
-    // BUG FIX: Check if currentUser exists before accessing its properties for logging
     if (currentUser) {
         console.log('%c[SmartOps] User logged out: ' + currentUser.email, 'color: #fbbf24');
     } else {
@@ -117,33 +167,51 @@ function logout() {
     }
 
     currentUser = null;
-    // Safely reset cart if it exists (likely from cart.js)
     if (typeof cart !== 'undefined') {
         cart = [];
     }
     localStorage.removeItem('techvault_user');
-    // Safely call cartUI if it exists (likely from ui.js or cart.js)
     if (typeof cartUI === 'function') {
         cartUI();
     }
-    document.getElementById('user-badge').style.display = 'none';
-    document.getElementById('logout-btn').style.display = 'none';
+
+    const userBadge = document.getElementById('user-badge');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    if (userBadge) userBadge.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    
     showAuth();
 }
 
 function showUser() {
-    // BUG FIX: Check if currentUser is null before attempting to access its properties.
-    // This prevents crashes if showUser is called when no user is logged in (e.g., on page load).
+    const userBadge = document.getElementById('user-badge');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmail = document.getElementById('user-email');
+
     if (!currentUser) {
-        document.getElementById('user-badge').style.display = 'none';
-        document.getElementById('logout-btn').style.display = 'none';
-        document.getElementById('user-email').textContent = ''; // Clear any previous email
+        if (userBadge) userBadge.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (userEmail) userEmail.textContent = '';
         return;
     }
 
-    var badge = document.getElementById('user-badge');
-    badge.textContent = currentUser.name;
-    badge.style.display = 'inline-block';
-    document.getElementById('logout-btn').style.display = 'inline-block';
-    document.getElementById('user-email').textContent = currentUser.email;
+    if (userBadge) {
+        userBadge.textContent = currentUser.name;
+        userBadge.style.display = 'inline-block';
+    } else {
+        console.warn('[SmartOps] Auth: Element "user-badge" not found for showing user.');
+    }
+
+    if (logoutBtn) {
+        logoutBtn.style.display = 'inline-block';
+    } else {
+        console.warn('[SmartOps] Auth: Element "logout-btn" not found for showing user.');
+    }
+
+    if (userEmail) {
+        userEmail.textContent = currentUser.email;
+    } else {
+        console.warn('[SmartOps] Auth: Element "user-email" not found for showing user.');
+    }
 }
