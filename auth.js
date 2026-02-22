@@ -1,8 +1,12 @@
 /* TechVault — Auth Module */
 
-var authMode = 'login'; // Initialize authMode for the modal state
-var currentUser = null; // Initialize currentUser, will be populated from localStorage or API
-var cart = []; // Initialize cart, will be populated by fetchCart or similar
+// Global state for authentication mode and current user
+var authMode = 'login'; // Default mode is login
+var currentUser = null; // Will hold the logged-in user object
+
+// Assuming API is a global variable defined in config.js
+// Assuming cart is a global variable defined in cart.js
+// Assuming fetchCart and cartUI are global functions defined in cart.js or ui.js
 
 function showAuth() {
     document.getElementById('auth-modal').style.display = 'flex';
@@ -55,13 +59,25 @@ function doAuth() {
 
     console.log('%c[SmartOps] Auth: ' + authMode + ' for ' + email, 'color: #fbbf24');
 
-    // BUG FIX: Changed endpoint from '/cart/add' to '/auth' for authentication requests.
-    fetch(API + '/auth', {
+    // BUG FIX: Changed API endpoint from '/cart/add' to '/auth' for authentication
+    // The payload already contains 'action' to differentiate login/signup.
+    fetch(API + '/auth', { // Assuming API is defined globally by config.js
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
-        .then(function (r) { return r.json(); })
+        .then(function (r) {
+            // Check for HTTP errors (e.g., 400, 500) before trying to parse JSON
+            if (!r.ok) {
+                return r.json().then(errorData => {
+                    throw new Error(errorData.error || `Server error: ${r.status} ${r.statusText}`);
+                }).catch(() => {
+                    // Fallback if response is not JSON (e.g., HTML error page)
+                    throw new Error(`Server error: ${r.status} ${r.statusText}`);
+                });
+            }
+            return r.json();
+        })
         .then(function (data) {
             if (!data.success) {
                 errEl.textContent = data.error || 'Authentication failed';
@@ -76,15 +92,16 @@ function doAuth() {
             console.log('%c[SmartOps] ✅ Logged in as: ' + currentUser.name + ' (' + currentUser.email + ')', 'color: #22c55e; font-weight: bold');
 
             hideAuth();
-            // Assuming showUser and fetchCart are defined globally or in other modules
-            if (typeof showUser === 'function') showUser();
-            if (typeof fetchCart === 'function') fetchCart();
-            
+            showUser(); // Assuming showUser is defined globally or in ui.js
+            // Safely call fetchCart if it exists (likely from cart.js)
+            if (typeof fetchCart === 'function') {
+                fetchCart();
+            }
             btn.disabled = false;
             btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
         })
         .catch(function (e) {
-            errEl.textContent = 'Network error: ' + e.message;
+            errEl.textContent = 'Authentication error: ' + e.message;
             errEl.style.display = 'block';
             btn.disabled = false;
             btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
@@ -92,29 +109,41 @@ function doAuth() {
 }
 
 function logout() {
-    console.log('%c[SmartOps] User logged out: ' + (currentUser ? currentUser.email : 'N/A'), 'color: #fbbf24');
+    // BUG FIX: Check if currentUser exists before accessing its properties for logging
+    if (currentUser) {
+        console.log('%c[SmartOps] User logged out: ' + currentUser.email, 'color: #fbbf24');
+    } else {
+        console.log('%c[SmartOps] User logged out (no current user found).', 'color: #fbbf24');
+    }
+
     currentUser = null;
-    cart = [];
+    // Safely reset cart if it exists (likely from cart.js)
+    if (typeof cart !== 'undefined') {
+        cart = [];
+    }
     localStorage.removeItem('techvault_user');
-    // Assuming cartUI is defined globally or in another module
-    if (typeof cartUI === 'function') cartUI();
+    // Safely call cartUI if it exists (likely from ui.js or cart.js)
+    if (typeof cartUI === 'function') {
+        cartUI();
+    }
     document.getElementById('user-badge').style.display = 'none';
     document.getElementById('logout-btn').style.display = 'none';
     showAuth();
 }
 
 function showUser() {
+    // BUG FIX: Check if currentUser is null before attempting to access its properties.
+    // This prevents crashes if showUser is called when no user is logged in (e.g., on page load).
+    if (!currentUser) {
+        document.getElementById('user-badge').style.display = 'none';
+        document.getElementById('logout-btn').style.display = 'none';
+        document.getElementById('user-email').textContent = ''; // Clear any previous email
+        return;
+    }
+
     var badge = document.getElementById('user-badge');
-    if (currentUser && badge) { // Add null check for currentUser and badge
-        badge.textContent = currentUser.name;
-        badge.style.display = 'inline-block';
-    }
-    var logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.style.display = 'inline-block';
-    }
-    var userEmail = document.getElementById('user-email');
-    if (currentUser && userEmail) { // Add null check for currentUser and userEmail
-        userEmail.textContent = currentUser.email;
-    }
+    badge.textContent = currentUser.name;
+    badge.style.display = 'inline-block';
+    document.getElementById('logout-btn').style.display = 'inline-block';
+    document.getElementById('user-email').textContent = currentUser.email;
 }
