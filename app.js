@@ -39,8 +39,8 @@ function doAuth() {
     if (!email ||!password) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
     if (authMode ==='signup' && !name) { errEl.textContent = 'Name is required'; errEl.style.display = 'block'; return; }
     errEl.style.display = 'none'; btn.disabled = true; btn.textContent = authMode === 'login' ? 'Signing in...' : 'Creating account...';
-    var payload = authMode ==='signup'? { action:'signup', email: email, password: password, name: name } : { action: 'login', email: email, password: password };
-    console.log('%c[SmartOps] Auth: ' + authMode + ' for'+ email, 'color:#fbbf24');
+    var payload = authMode ==='signup' ? { action:'signup', email: email, password: password, name: name } : { action: 'login', email: email, password: password };
+    console.log('%c[SmartOps] Auth:'+ authMode +'for'+ email, 'color:#fbbf24');
     fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
        .then(function (r) { return r.json(); })
        .then(function (data) {
@@ -91,7 +91,7 @@ function add(id) {
             slog('CART_ADD_SUCCESS', { productId: id, userId: currentUser.email });
             setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10? 'btn new-product' : 'btn'); b.disabled = false; }, 700);
         }).catch(function (e) {
-            console.error('%c[SmartOps] ❌ Cart error:'+ e.message, 'color:#ef4444');
+            console.error('%c[SmartOps] ❌ Cart error: ' + e.message, 'color:#ef4444');
             b.textContent = 'Failed'; b.className = (id === 9 || id === 10? 'btn new-product fail' : 'btn fail');
             slog('CART_ADD_ERROR', { productId: id, error: e.message });
             setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10? 'btn new-product' : 'btn'); b.disabled = false; }, 1000);
@@ -100,7 +100,7 @@ function add(id) {
 function showCrashOverlay(productId, errorCode) {
     var existing = document.getElementById('crash-overlay'); if (existing) existing.remove();
     var overlay = document.createElement('div'); overlay.id = 'crash-overlay';
-    overlay.innerHTML = '<div class="crash-box"><div class="crash-icon">⚠️</div><h2>Page Error</h2><p>Something went wrong while processing your request.</p><p class="crash-code">Error:'+ errorCode +'(Product #' + productId + ')</p><p class="crash-sub">This error has been reported to SmartOps AI for analysis.</p><button onclick="location.reload()" class="crash-btn">Refresh Page</button></div>';
+    overlay.innerHTML = '<div class="crash-box"><div class="crash-icon">⚠️</div><h2>Page Error</h2><p>Something went wrong while processing your request.</p><p class="crash-code">Error:'+ errorCode + ' (Product #' + productId + ')</p><p class="crash-sub">This error has been reported to SmartOps AI for analysis.</p><button onclick="location.reload()" class="crash-btn">Refresh Page</button></div>';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;display:flex;align-items:center;justify-content:center;animation:fadeIn.3s';
     document.body.appendChild(overlay);
     console.log('%c[SmartOps] 🔴 Crash overlay shown — waiting for user to refresh', 'color:#ef4444;font-weight:bold');
@@ -110,7 +110,7 @@ function showCrashOverlay(productId, errorCode) {
 function renderProducts() {
     document.getElementById('products').innerHTML = PRODUCTS.map(function (p) {
         var isNew = p.id === 9 || p.id === 10;
-        return '<div class="card' + (isNew ?'new-card' : '') + '" data-id="' + p.id + '"><img src="' + p.img + '" alt="' + p.name + '" loading="lazy">' + (isNew ? '<span class="new-tag">NEW</span>' : '') + '<div class="info"><span class="cat">' + p.cat + '</span><h3>' + p.name + '</h3><p class="price">$' + p.price + '</p><button class="btn' + (isNew? ' new-product' : '') + '" id="btn-' + p.id + '" onclick="add(' + p.id + ')">Add to Cart</button></div></div>';
+        return '<div class="card' + (isNew ?'new-card' : '') + '" data-id="' + p.id + '"><img src="' + p.img + '" alt="' + p.name + '" loading="lazy">' + (isNew ? '<span class="new-tag">NEW</span>' : '') + '<div class="info"><span class="cat">' + p.cat + '</span><h3>' + p.name + '</h3><p class="price">$' + p.price + '</p><button class="btn' + (isNew?'new-product' : '') + '" id="btn-' + p.id + '" onclick="add(' + p.id + ')">Add to Cart</button></div></div>';
     }).join('');
     document.getElementById('ver-badge').textContent = 'v2 New Product'; document.getElementById('ver-badge').style.background = '#1a1a2e'; document.getElementById('ver-badge').style.color = '#a78bfa'; document.getElementById('ver-badge').style.borderColor = '#2d2a4a';
 }
