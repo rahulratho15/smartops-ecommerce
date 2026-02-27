@@ -42,7 +42,7 @@ function doAuth() {
     var payload = authMode ==='signup'? { action:'signup', email: email, password: password, name: name } : { action: 'login', email: email, password: password };
     console.log('%c[SmartOps] Auth: ' + authMode +'for'+ email, 'color:#fbbf24');
     fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        .then(function (r) { return r.json(); })
+       .then(function (r) { return r.json(); })
        .then(function (data) {
             if (!data.success) { errEl.textContent = data.error || 'Authentication failed'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = authMode === 'login'? 'Sign In' : 'Sign Up'; return; }
             currentUser = data.user; localStorage.setItem('techvault_user', JSON.stringify(currentUser));
@@ -64,7 +64,7 @@ function fetchCart() {
     console.log('%c[SmartOps] Fetching cart from DynamoDB for ' + currentUser.email + '...', 'color:#60a5fa');
     fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getCart', userId: currentUser.email }) })
       .then(function (r) { return r.json(); })
-      .then(function (data) { if (data.success && data.items) { cart = data.items; cartUI(); console.log('%c[SmartOps] Cart loaded:'+ cart.length + ' items from DynamoDB', 'color:#22c55e'); } })
+       .then(function (data) { if (data.success && data.items) { cart = data.items; cartUI(); console.log('%c[SmartOps] Cart loaded:'+ cart.length + ' items from DynamoDB', 'color:#22c55e'); } })
       .catch(function (e) { console.error('[SmartOps] Cart fetch error:', e.message); });
 }
 function add(id) {
