@@ -68,7 +68,6 @@ function fetchCart() {
         .catch(function (e) { console.error('[SmartOps] Cart fetch error:', e.message); });
 }
 function add(id) {
-    if (id === 9) { throw new Error('crash'); }
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id); if (b.disabled) return;
     b.disabled = true; b.textContent = 'Adding...'; b.className = b.className.replace(' done', '').replace(' fail', '');
