@@ -38,17 +38,17 @@ function doAuth() {
     var errEl = document.getElementById('auth-error'), btn = document.getElementById('auth-btn');
     if (!email || !password) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
     if (authMode ==='signup' && !name) { errEl.textContent = 'Name is required'; errEl.style.display = 'block'; return; }
-    errEl.style.display = 'none'; btn.disabled = true; btn.textContent = authMode === 'login'? 'Signing in...' : 'Creating account...';
-    var payload = authMode ==='signup' ? { action:'signup', email: email, password: password, name: name } : { action: 'login', email: email, password: password };
+    errEl.style.display = 'none'; btn.disabled = true; btn.textContent = authMode === 'login' ? 'Signing in...' : 'Creating account...';
+    var payload = authMode ==='signup'? { action:'signup', email: email, password: password, name: name } : { action: 'login', email: email, password: password };
     console.log('%c[SmartOps] Auth: ' + authMode +'for'+ email, 'color:#fbbf24');
     fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-       .then(function (r) { return r.json(); })
+        .then(function (r) { return r.json(); })
        .then(function (data) {
-            if (!data.success) { errEl.textContent = data.error || 'Authentication failed'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up'; return; }
+            if (!data.success) { errEl.textContent = data.error || 'Authentication failed'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = authMode === 'login'? 'Sign In' : 'Sign Up'; return; }
             currentUser = data.user; localStorage.setItem('techvault_user', JSON.stringify(currentUser));
             console.log('%c[SmartOps] ✅ Logged in as:'+ currentUser.name +'(' + currentUser.email + ')', 'color:#22c55e;font-weight:bold');
-            hideAuth(); showUser(); fetchCart(); btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up';
-        }).catch(function (e) { errEl.textContent = 'Network error:'+ e.message; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up'; });
+            hideAuth(); showUser(); fetchCart(); btn.disabled = false; btn.textContent = authMode === 'login'? 'Sign In' : 'Sign Up';
+        }).catch(function (e) { errEl.textContent = 'Network error:'+ e.message; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = authMode === 'login'? 'Sign In' : 'Sign Up'; });
 }
 function logout() {
     console.log('%c[SmartOps] User logged out:'+ currentUser.email, 'color:#fbbf24');
@@ -61,7 +61,7 @@ function showUser() {
 }
 function fetchCart() {
     if (!currentUser) return;
-    console.log('%c[SmartOps] Fetching cart from DynamoDB for'+ currentUser.email + '...', 'color:#60a5fa');
+    console.log('%c[SmartOps] Fetching cart from DynamoDB for ' + currentUser.email + '...', 'color:#60a5fa');
     fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getCart', userId: currentUser.email }) })
        .then(function (r) { return r.json(); })
        .then(function (data) { if (data.success && data.items) { cart = data.items; cartUI(); console.log('%c[SmartOps] Cart loaded:'+ cart.length + ' items from DynamoDB', 'color:#22c55e'); } })
@@ -87,7 +87,7 @@ function add(id) {
             var c = cart.find(function (x) { return x.productId === id; });
             if (c) c.qty++; else cart.push({ productId: id, qty: 1 });
             cartUI(); b.textContent = 'Added ✓'; b.className = (id === 9 || id === 10? 'btn new-product done' : 'btn done');
-            console.log('%c[SmartOps] ✅ Product #' + id +'added successfully (stored in DynamoDB)', 'color:#22c55e;font-weight:bold');
+            console.log('%c[SmartOps] ✅ Product #' + id + ' added successfully (stored in DynamoDB)', 'color:#22c55e;font-weight:bold');
             slog('CART_ADD_SUCCESS', { productId: id, userId: currentUser.email });
             setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10? 'btn new-product' : 'btn'); b.disabled = false; }, 700);
         }).catch(function (e) {
@@ -100,7 +100,7 @@ function add(id) {
 function showCrashOverlay(productId, errorCode) {
     var existing = document.getElementById('crash-overlay'); if (existing) existing.remove();
     var overlay = document.createElement('div'); overlay.id = 'crash-overlay';
-    overlay.innerHTML = '<div class="crash-box"><div class="crash-icon">⚠️</div><h2>Page Error</h2><p>Something went wrong while processing your request.</p><p class="crash-code">Error:'+ errorCode + ' (Product #' + productId + ')</p><p class="crash-sub">This error has been reported to SmartOps AI for analysis.</p><button onclick="location.reload()" class="crash-btn">Refresh Page</button></div>';
+    overlay.innerHTML = '<div class="crash-box"><div class="crash-icon">⚠️</div><h2>Page Error</h2><p>Something went wrong while processing your request.</p><p class="crash-code">Error:'+ errorCode +'(Product #' + productId + ')</p><p class="crash-sub">This error has been reported to SmartOps AI for analysis.</p><button onclick="location.reload()" class="crash-btn">Refresh Page</button></div>';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;display:flex;align-items:center;justify-content:center;animation:fadeIn.3s';
     document.body.appendChild(overlay);
     console.log('%c[SmartOps] 🔴 Crash overlay shown — waiting for user to refresh', 'color:#ef4444;font-weight:bold');
@@ -141,8 +141,8 @@ function checkDashboard() {
             console.log('%c[SmartOps] 🤖 AI DECISION DETECTED', 'color:#667eea;font-weight:bold;font-size:16px');
             console.log('%c[SmartOps] Action:'+ latest.action, 'color:#22c55e;font-weight:bold;font-size:14px');
             console.log('%c[SmartOps] Scenario: ' + latest.scenario, 'color:#60a5fa');
-            console.log('%c[SmartOps] Reasoning:'+ (latest.reasoning || 'N/A'), 'color:#d4d4d4');
-            console.log('%c[SmartOps] Confidence: ' + ((latest.confidence || 0) * 100).toFixed(0) + '%', 'color:#fbbf24');
+            console.log('%c[SmartOps] Reasoning: ' + (latest.reasoning || 'N/A'), 'color:#d4d4d4');
+            console.log('%c[SmartOps] Confidence:'+ ((latest.confidence || 0) * 100).toFixed(0) + '%', 'color:#fbbf24');
             if (latest.executionDetails) console.log('%c[SmartOps] ✅ Result:'+ latest.executionDetails, 'color:#22c55e;font-weight:bold');
             if (latest.thinkingChain) {
                 console.log('%c[SmartOps] 🧠 AI Thinking Chain:', 'color:#a78bfa;font-weight:bold');
@@ -151,7 +151,7 @@ function checkDashboard() {
                 if (latest.thinkingChain.hypothesis) console.log('%c  💡 Hypothesis:'+ latest.thinkingChain.hypothesis, 'color:#a78bfa');
                 if (latest.thinkingChain.riskAssessment) console.log('%c  ⚠️ Risk:'+ latest.thinkingChain.riskAssessment, 'color:#f97316');
             }
-            if (latest.actionPlan && latest.actionPlan.steps) { console.log('%c[SmartOps] 📋 Action Plan:', 'color:#60a5fa;font-weight:bold'); latest.actionPlan.steps.forEach(function (s, i) { console.log('%c  ' + (i + 1) + '.'+ s, 'color:#60a5fa'); }); }
+            if (latest.actionPlan && latest.actionPlan.steps) { console.log('%c[SmartOps] 📋 Action Plan:', 'color:#60a5fa;font-weight:bold'); latest.actionPlan.steps.forEach(function (s, i) { console.log('%c  ' + (i + 1) + '. ' + s, 'color:#60a5fa'); }); }
             if (latest.action === 'SELF_HEAL' && latest.executionStatus === 'EXECUTED') { console.log('%c[SmartOps] 🎉 BUG FIXED! Refresh the page — it should work now!', 'color:#22c55e;font-weight:bold;font-size:16px'); var co = document.getElementById('crash-overlay'); if (co) co.remove(); }
             lastDecisionCount = total;
         }
