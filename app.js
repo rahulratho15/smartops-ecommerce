@@ -38,7 +38,7 @@ function doAuth() {
     var errEl = document.getElementById('auth-error'), btn = document.getElementById('auth-btn');
     if (!email || !password) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
     if (authMode ==='signup' && !name) { errEl.textContent = 'Name is required'; errEl.style.display = 'block'; return; }
-    errEl.style.display = 'none'; btn.disabled = true; btn.textContent = authMode === 'login' ? 'Signing in...' : 'Creating account...';
+    errEl.style.display = 'none'; btn.disabled = true; btn.textContent = authMode === 'login'? 'Signing in...' : 'Creating account...';
     var payload = authMode ==='signup'? { action:'signup', email: email, password: password, name: name } : { action: 'login', email: email, password: password };
     console.log('%c[SmartOps] Auth: ' + authMode +'for'+ email, 'color:#fbbf24');
     fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
@@ -48,7 +48,7 @@ function doAuth() {
             currentUser = data.user; localStorage.setItem('techvault_user', JSON.stringify(currentUser));
             console.log('%c[SmartOps] ✅ Logged in as:'+ currentUser.name +'(' + currentUser.email + ')', 'color:#22c55e;font-weight:bold');
             hideAuth(); showUser(); fetchCart(); btn.disabled = false; btn.textContent = authMode === 'login'? 'Sign In' : 'Sign Up';
-        }).catch(function (e) { errEl.textContent = 'Network error:'+ e.message; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = authMode === 'login'? 'Sign In' : 'Sign Up'; });
+        }).catch(function (e) { errEl.textContent = 'Network error:'+ e.message; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = authMode === 'login' ? 'Sign In' : 'Sign Up'; });
 }
 function logout() {
     console.log('%c[SmartOps] User logged out:'+ currentUser.email, 'color:#fbbf24');
