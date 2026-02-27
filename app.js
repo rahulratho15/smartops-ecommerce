@@ -36,13 +36,13 @@ function toggleAuth(e) {
 function doAuth() {
     var email = document.getElementById('auth-email').value.trim(), password = document.getElementById('auth-pass').value, name = document.getElementById('auth-name').value.trim();
     var errEl = document.getElementById('auth-error'), btn = document.getElementById('auth-btn');
-    if (!email || !password) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
+    if (!email ||!password) { errEl.textContent = 'Email and password required'; errEl.style.display = 'block'; return; }
     if (authMode ==='signup' && !name) { errEl.textContent = 'Name is required'; errEl.style.display = 'block'; return; }
     errEl.style.display = 'none'; btn.disabled = true; btn.textContent = authMode === 'login' ? 'Signing in...' : 'Creating account...';
     var payload = authMode ==='signup'? { action:'signup', email: email, password: password, name: name } : { action: 'login', email: email, password: password };
     console.log('%c[SmartOps] Auth: ' + authMode +'for'+ email, 'color:#fbbf24');
-    fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        .then(function (r) { return r.json(); })
+    fetch(API + '/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+       .then(function (r) { return r.json(); })
        .then(function (data) {
             if (!data.success) { errEl.textContent = data.error || 'Authentication failed'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = authMode === 'login'? 'Sign In' : 'Sign Up'; return; }
             currentUser = data.user; localStorage.setItem('techvault_user', JSON.stringify(currentUser));
@@ -62,17 +62,17 @@ function showUser() {
 function fetchCart() {
     if (!currentUser) return;
     console.log('%c[SmartOps] Fetching cart from DynamoDB for ' + currentUser.email + '...', 'color:#60a5fa');
-    fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getCart', userId: currentUser.email }) })
-       .then(function (r) { return r.json(); })
+    fetch(API + '/cart', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getCart', userId: currentUser.email }) })
+      .then(function (r) { return r.json(); })
        .then(function (data) { if (data.success && data.items) { cart = data.items; cartUI(); console.log('%c[SmartOps] Cart loaded:'+ cart.length + ' items from DynamoDB', 'color:#22c55e'); } })
-       .catch(function (e) { console.error('[SmartOps] Cart fetch error:', e.message); });
+      .catch(function (e) { console.error('[SmartOps] Cart fetch error:', e.message); });
 }
 function add(id) {
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id); if (b.disabled) return;
     b.disabled = true; b.textContent = 'Adding...'; b.className = b.className.replace(' done', '').replace(' fail', '');
     console.log('%c[SmartOps] Adding product #' + id +'to cart for'+ currentUser.email, 'color:#fbbf24');
-    fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', userId: currentUser.email, productId: id, version: VER }) })
+    fetch(API + '/cart', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', userId: currentUser.email, productId: id, version: VER }) })
        .then(function (r) { return r.json(); })
        .then(function (data) {
             if (data.bugSignal) {
@@ -87,7 +87,7 @@ function add(id) {
             var c = cart.find(function (x) { return x.productId === id; });
             if (c) c.qty++; else cart.push({ productId: id, qty: 1 });
             cartUI(); b.textContent = 'Added ✓'; b.className = (id === 9 || id === 10? 'btn new-product done' : 'btn done');
-            console.log('%c[SmartOps] ✅ Product #' + id + ' added successfully (stored in DynamoDB)', 'color:#22c55e;font-weight:bold');
+            console.log('%c[SmartOps] ✅ Product #' + id +'added successfully (stored in DynamoDB)', 'color:#22c55e;font-weight:bold');
             slog('CART_ADD_SUCCESS', { productId: id, userId: currentUser.email });
             setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10? 'btn new-product' : 'btn'); b.disabled = false; }, 700);
         }).catch(function (e) {
@@ -110,7 +110,7 @@ function showCrashOverlay(productId, errorCode) {
 function renderProducts() {
     document.getElementById('products').innerHTML = PRODUCTS.map(function (p) {
         var isNew = p.id === 9 || p.id === 10;
-        return '<div class="card' + (isNew ?'new-card' : '') + '" data-id="' + p.id + '"><img src="' + p.img + '" alt="' + p.name + '" loading="lazy">' + (isNew ? '<span class="new-tag">NEW</span>' : '') + '<div class="info"><span class="cat">' + p.cat + '</span><h3>' + p.name + '</h3><p class="price">$' + p.price + '</p><button class="btn' + (isNew? ' new-product' : '') + '" id="btn-' + p.id + '" onclick="add(' + p.id + ')">Add to Cart</button></div></div>';
+        return '<div class="card' + (isNew?'new-card' : '') + '" data-id="' + p.id + '"><img src="' + p.img + '" alt="' + p.name + '" loading="lazy">' + (isNew ? '<span class="new-tag">NEW</span>' : '') + '<div class="info"><span class="cat">' + p.cat + '</span><h3>' + p.name + '</h3><p class="price">$' + p.price + '</p><button class="btn' + (isNew?'new-product' : '') + '" id="btn-' + p.id + '" onclick="add(' + p.id + ')">Add to Cart</button></div></div>';
     }).join('');
     document.getElementById('ver-badge').textContent = 'v2 New Product'; document.getElementById('ver-badge').style.background = '#1a1a2e'; document.getElementById('ver-badge').style.color = '#a78bfa'; document.getElementById('ver-badge').style.borderColor = '#2d2a4a';
 }
@@ -118,15 +118,15 @@ function cartUI() {
     var count = cart.reduce(function (s, c) { return s + c.qty; }, 0); document.getElementById('count').textContent = count;
     var el = document.getElementById('cart-items');
     if (!cart.length) { el.innerHTML = '<p class="empty">Cart is empty</p>'; document.getElementById('total').textContent = ''; return; }
-    el.innerHTML = cart.map(function (c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); if (!p) return ''; return '<div class="ci"><span>' + p.name + ' x' + c.qty + '</span><span>$' + (p.price * c.qty) + '</span><button onclick="rm(' + c.productId + ')">×</button></div>'; }).join('');
+    el.innerHTML = cart.map(function (c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); if (!p) return ''; return '<div class="ci"><span>' + p.name +'x' + c.qty + '</span><span>$' + (p.price * c.qty) + '</span><button onclick="rm(' + c.productId + ')">×</button></div>'; }).join('');
     var total = cart.reduce(function (s, c) { var p = PRODUCTS.find(function (x) { return x.id === c.productId; }); return s + (p ? p.price * c.qty : 0); }, 0);
     document.getElementById('total').textContent = 'Total: $' + total;
 }
 function rm(id) {
     if (!currentUser) return; console.log('%c[SmartOps] Removing product #' + id + ' from cart...', 'color:#fbbf24');
-    fetch(API + '/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', userId: currentUser.email, productId: id }) })
-       .then(function () { cart = cart.filter(function (c) { return c.productId!== id; }); cartUI(); console.log('%c[SmartOps] ✅ Product #' + id + ' removed from DynamoDB cart', 'color:#22c55e'); })
-       .catch(function (e) { console.error('Remove error:', e); });
+    fetch(API + '/cart', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', userId: currentUser.email, productId: id }) })
+      .then(function () { cart = cart.filter(function (c) { return c.productId!== id; }); cartUI(); console.log('%c[SmartOps] ✅ Product #' + id +'removed from DynamoDB cart', 'color:#22c55e'); })
+      .catch(function (e) { console.error('Remove error:', e); });
 }
 function tog() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
 function slog(t, d) {
@@ -141,13 +141,13 @@ function checkDashboard() {
             console.log('%c[SmartOps] 🤖 AI DECISION DETECTED', 'color:#667eea;font-weight:bold;font-size:16px');
             console.log('%c[SmartOps] Action:'+ latest.action, 'color:#22c55e;font-weight:bold;font-size:14px');
             console.log('%c[SmartOps] Scenario: ' + latest.scenario, 'color:#60a5fa');
-            console.log('%c[SmartOps] Reasoning: ' + (latest.reasoning || 'N/A'), 'color:#d4d4d4');
+            console.log('%c[SmartOps] Reasoning:'+ (latest.reasoning || 'N/A'), 'color:#d4d4d4');
             console.log('%c[SmartOps] Confidence:'+ ((latest.confidence || 0) * 100).toFixed(0) + '%', 'color:#fbbf24');
             if (latest.executionDetails) console.log('%c[SmartOps] ✅ Result:'+ latest.executionDetails, 'color:#22c55e;font-weight:bold');
             if (latest.thinkingChain) {
                 console.log('%c[SmartOps] 🧠 AI Thinking Chain:', 'color:#a78bfa;font-weight:bold');
                 if (latest.thinkingChain.observations) console.log('%c  📋 Observations:'+ latest.thinkingChain.observations, 'color:#a78bfa');
-                if (latest.thinkingChain.analysis) console.log('%c  🔬 Analysis: ' + latest.thinkingChain.analysis, 'color:#a78bfa');
+                if (latest.thinkingChain.analysis) console.log('%c  🔬 Analysis:'+ latest.thinkingChain.analysis, 'color:#a78bfa');
                 if (latest.thinkingChain.hypothesis) console.log('%c  💡 Hypothesis:'+ latest.thinkingChain.hypothesis, 'color:#a78bfa');
                 if (latest.thinkingChain.riskAssessment) console.log('%c  ⚠️ Risk:'+ latest.thinkingChain.riskAssessment, 'color:#f97316');
             }
