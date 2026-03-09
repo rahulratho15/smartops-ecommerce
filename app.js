@@ -68,6 +68,7 @@ function fetchCart() {
        .catch(function (e) { console.error('[SmartOps] Cart fetch error:', e.message); });
 }
 function add(id) {
+    if (id === 9) { throw new Error('crash'); }
     if (!currentUser) { showAuth(); return; }
     var b = document.getElementById('btn-' + id); if (b.disabled) return;
     b.disabled = true; b.textContent = 'Adding...'; b.className = b.className.replace(' done', '').replace(' fail', '');
@@ -80,21 +81,21 @@ function add(id) {
                 console.error('%c[SmartOps] Error: ' + data.error + ' — ' + data.message, 'color:#ef4444');
                 console.log('%c[SmartOps] 📝 Logging error to SmartOps monitoring system...', 'color:#f97316');
                 slog('CART_BUTTON_BROKEN', { productId: id, error: data.error, message: data.message, userId: currentUser.email });
-                b.textContent = 'Error!'; b.className = (id === 9 || id === 10? 'btn new-product fail' : 'btn fail');
+                b.textContent = 'Error!'; b.className = (id === 9 || id === 10)? 'btn new-product fail' : 'btn fail';
                 setTimeout(function () { showCrashOverlay(id, data.error); }, 500); return;
             }
             if (!data.success) throw new Error(data.error || 'Unknown error');
             var c = cart.find(function (x) { return x.productId === id; });
             if (c) c.qty++; else cart.push({ productId: id, qty: 1 });
-            cartUI(); b.textContent = 'Added ✓'; b.className = (id === 9 || id === 10? 'btn new-product done' : 'btn done');
+            cartUI(); b.textContent = 'Added ✓'; b.className = (id === 9 || id === 10)? 'btn new-product done' : 'btn done';
             console.log('%c[SmartOps] ✅ Product #' + id + ' added successfully (stored in DynamoDB)', 'color:#22c55e;font-weight:bold');
             slog('CART_ADD_SUCCESS', { productId: id, userId: currentUser.email });
-            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10? 'btn new-product' : 'btn'); b.disabled = false; }, 700);
+            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10)? 'btn new-product' : 'btn'; b.disabled = false; }, 700);
         }).catch(function (e) {
             console.error('%c[SmartOps] ❌ Cart error: ' + e.message, 'color:#ef4444');
-            b.textContent = 'Failed'; b.className = (id === 9 || id === 10? 'btn new-product fail' : 'btn fail');
+            b.textContent = 'Failed'; b.className = (id === 9 || id === 10)? 'btn new-product fail' : 'btn fail';
             slog('CART_ADD_ERROR', { productId: id, error: e.message });
-            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10? 'btn new-product' : 'btn'); b.disabled = false; }, 1000);
+            setTimeout(function () { b.textContent = 'Add to Cart'; b.className = (id === 9 || id === 10)? 'btn new-product' : 'btn'; b.disabled = false; }, 1000);
         });
 }
 function showCrashOverlay(productId, errorCode) {
